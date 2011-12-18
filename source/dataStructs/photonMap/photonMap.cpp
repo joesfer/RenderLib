@@ -1,5 +1,6 @@
 #include "photonMap.h"
-#include "PhotonMapKNN.h"
+#include "photonMapKNN.h"
+#include <memory.h>
 
 namespace RenderLib {
 namespace DataStructures {

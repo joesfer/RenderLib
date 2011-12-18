@@ -199,7 +199,7 @@ inline bool Vector3<T>::equals( const Vector3<T>& p, const T epsilon ) const {
 // specializations for vector3d ////////////////////////////////////////////////////
 
 // according to the IEEE standards, a NaN number always returns false when compared against itself
-#define _isnanf( f ) ( f != f )
+#define _isnan( f ) ( f != f )
 
 template<>
 inline bool Vector3<double>::isValid() const {
@@ -215,7 +215,7 @@ inline Vector3<double> Vector3<double>::clamp(const Vector3<double>& v, double M
 
 template<>
 inline bool Vector3<float>::isValid() const {
-	return !_isnanf( x ) && !_isnanf( y ) && !_isnanf( z )/* && _finitef( x ) && _finitef( y ) && _finitef( z )*/;
+	return !_isnan( x ) && !_isnan( y ) && !_isnan( z )/* && _finitef( x ) && _finitef( y ) && _finitef( z )*/;
 }
 
 template<>
