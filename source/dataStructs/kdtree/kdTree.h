@@ -53,14 +53,14 @@ namespace DataStructures {
 		KdTreeAllocator();
 		~KdTreeAllocator();
 
-		void Init();
-		void FreeAll();
+		void init();
+		void freeAll();
 
-		KdTreeNode_t* CreateNode();
-		KdTreeNode_t* AllocChildren();
+		KdTreeNode_t* createNode();
+		KdTreeNode_t* allocChildren();
 	private:	
 
-		void AllocChunk();
+		void allocChunk();
 
 		struct memChunk_t {
 			memChunk_t( size_t bytes ) { memory = (KdTreeNode_t*)malloc( bytes ); allocated = 0; nextChunk = NULL; }
@@ -89,36 +89,28 @@ namespace DataStructures {
 		virtual					~KdTree();
 
 		template< typename T >
-		bool 					Init( const RenderLib::DataStructures::ITriangleSoup< T >* mesh, int maxDepth, int minTrisPerLeaf );
+		bool 					init( const RenderLib::DataStructures::ITriangleSoup< T >* mesh, int maxDepth, int minTrisPerLeaf );
 
-		void 					Release();
+		void 					release();
 		
 		template< typename T >
-		bool TraceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup< T >* mesh, TraceIsectDesc& isect ) const;
+		bool traceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup< T >* mesh, TraceIsectDesc& isect ) const;
 
-		RenderLib::Geometry::BoundingBox	Bounds() const { return bounds; }
-
-	#if ENABLE_STATS
-		int                     MaxDepth() const { return maxDepth; } // max depth allowed
-		int                     NumNodes() const { return numNodes; }
-		void                    Depth( int& min, int& max, int& avg ) const; // min depth, max depth, avg depth reached by the built tree
-		int                     MaxTrisPerLeaf() const { return maxTrisPerLeaf; }
-		void                    LeavesStats( int& numLeaves, int& avgTrisPerLeaf, float& percentEmptyLeaves );
-	#endif
+		RenderLib::Geometry::BoundingBox	bounds() const { return boundingBox; }
 
 	private:
-		static void Build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds );
+		static void build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds );
 		
-		static float FindSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
-		static float FindSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
+		static float findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
+		static float findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
 		
-		static int SplitterSort( const float* a, const float* b );
-		static KdTreeNode_t* CreateNode();
-		static KdTreeNode_t* AllocChildren();
+		static int splitterSort( const float* a, const float* b );
+		static KdTreeNode_t* createNode();
+		static KdTreeNode_t* allocChildren();
 
 	private:
-		KdTreeNode_t*			  root;
-		RenderLib::Geometry::BoundingBox				  bounds;
+		KdTreeNode_t*						root;
+		RenderLib::Geometry::BoundingBox	boundingBox;
 
 		static const float costTraverse;
 		static const float costIntersect;
@@ -129,21 +121,10 @@ namespace DataStructures {
 		static int maxDepth;
 		static int maxTrisPerLeaf;
 
-	#if ENABLE_STATS
-		// statistics
-		static int                     treeDepth;
-		static int                     numNodes;
-		static int                     hitcount;
-		// we cannot leave idLists as static types because the stub won't be initialized 
-		// if their constructor is called when Arkitekt's DLL is loaded. Therefore they're
-		// set as pointers, and created afterwards.
-		static CoreLib::idList<node_t*>*        leaves;
-		static CoreLib::idList<int>*            depths;
-	#endif
 		static KdTreeAllocator memoryPool;
 	};
 
-	bool ClipSegment(const RenderLib::Math::Point3f& A, const RenderLib::Math::Point3f& B, const RenderLib::Math::Point3f& Min, const RenderLib::Math::Point3f& Max, float& t0, float &t1 );
+	bool clipSegment(const RenderLib::Math::Point3f& A, const RenderLib::Math::Point3f& B, const RenderLib::Math::Point3f& Min, const RenderLib::Math::Point3f& Max, float& t0, float &t1 );
 
 	#include "kdTree.inl"
 }

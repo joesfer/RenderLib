@@ -21,7 +21,7 @@
 */
 
 template< typename T >
-bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, const int _maxDepth, const int _minTrisPerLeaf ) {
+bool KdTree::init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, const int _maxDepth, const int _minTrisPerLeaf ) {
 	using namespace RenderLib::Math;
 
 	KdTree::maxDepth       = _maxDepth;
@@ -29,7 +29,7 @@ bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 
 	delete( root );
 
-	this->root = CreateNode();
+	this->root = createNode();
 
 	int numTris = (int)mesh->numIndices() / 3;
 	const int *indices = mesh->getIndices();
@@ -50,22 +50,15 @@ bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 		triangleBounds[ i ].bounds.expand( p1 );
 		triangleBounds[ i ].bounds.expand( p2 );
 
-		bounds.expand( triangleBounds[ i ].bounds );
+		boundingBox.expand( triangleBounds[ i ].bounds );
 	};
 
 	// Grow the bounding box a tiny amount proportional to the scene dimensions for robustness.
-	Vector3f offset = ( bounds.max() - bounds.min() ) * 1.0e-5f;
-	bounds.min() -= offset;
-	bounds.max() += offset;
+	Vector3f offset = ( boundingBox.max() - boundingBox.min() ) * 1.0e-5f;
+	boundingBox.min() -= offset;
+	boundingBox.max() += offset;
 
-#if ENABLE_STATS
-	// reset statistics`
-	KdTree::treeDepth = 0;
-	KdTree::numNodes = 0;
-	KdTree::leaves = new CoreLib::idList<KdTree::KdTreeNode_t*>();
-	KdTree::depths = new CoreLib::idList<int>();
-#endif
-	Build_r( root, triangleBounds, 0, bounds );
+	build_r( root, triangleBounds, 0, boundingBox );
 
 	// free resources
 	delete(triangleBounds);
@@ -74,7 +67,7 @@ bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 }
 
 template< typename T >
-bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup<T>* mesh, TraceIsectDesc& isect ) const {
+bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup<T>* mesh, TraceIsectDesc& isect ) const {
 	using namespace RenderLib::Raytracing;
 	using namespace RenderLib::Math;
 	using namespace RenderLib::Geometry;
@@ -95,7 +88,7 @@ bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 	}
 
 	// Intersect ray with scene bounds, find the entry and exit signed distances
-	if ( ClipSegment( trace.startPoint, trace.endPoint, bounds.min(), bounds.max(), tMin, tMax ) == false ) {
+	if ( clipSegment( trace.startPoint, trace.endPoint, boundingBox.min(), boundingBox.max(), tMin, tMax ) == false ) {
 		return false;
 	}
 
@@ -152,7 +145,7 @@ bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 #pragma region LEAF_NODE
 			// Check for intersection against the primitives in this node
 
-			const int *indices = mesh->getIndices();
+			const int *indices       = mesh->getIndices();
 			const T* verts = mesh->getVertices();
 			Point3f start = ray.origin + ray.direction * tMin;
 			Point3f end   = ray.origin + ray.direction * tMax;

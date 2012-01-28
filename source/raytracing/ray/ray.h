@@ -31,7 +31,7 @@ namespace Raytracing {
 		RenderLib::Math::Point3f origin;
 		RenderLib::Math::Vector3f direction;
 		float tMax, tMin;
-		inline Point3f At(float t) const {return origin + direction*t;};
+		inline RenderLib::Math::Point3f at(float t) const {return origin + direction*t;};
 	};	
 }
 }

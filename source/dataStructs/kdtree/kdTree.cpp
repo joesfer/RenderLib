@@ -8,7 +8,6 @@
 namespace RenderLib {
 namespace DataStructures {
 
-	#define ENABLE_STATS 0
 	#define ADAPTIVE_HEURISTIC 1
 
 	KdTreeAllocator KdTree::memoryPool;
@@ -18,16 +17,7 @@ namespace DataStructures {
 	KdTreeNode_t::~KdTreeNode_t() {
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-
-	#if ENABLE_STATS
-	int				           KdTree::treeDepth;
-	int				           KdTree::numNodes;
-	CoreLib::idList<KdTreeNode_t*>* KdTree::leaves;
-	int				           KdTree::hitcount;
-	CoreLib::idList<int>*	           KdTree::depths;
-	//sdLock statsLock;
-	#endif
+	//////////////////////////////////////////////////////////////////////////	
 
 	const float KdTree::costTraverse   = 0.3f;
 	const float KdTree::costIntersect  = 1.0f;
@@ -38,46 +28,26 @@ namespace DataStructures {
 
 	KdTree::KdTree() {
 		root = NULL;
-		KdTree::memoryPool.Init();
+		KdTree::memoryPool.init();
 	}
 
 	KdTree::~KdTree() {
 		//delete( root ); // using a memory arena
-		KdTree::memoryPool.FreeAll();
-	#if ENABLE_STATS
-		delete(KdTree::leaves);
-		delete(KdTree::depths);
-		KdTree::leaves = NULL;
-		KdTree::depths = NULL;
-	#endif
+		KdTree::memoryPool.freeAll();	
 	}
 
-	KdTreeNode_t* KdTree::CreateNode() {
-		return memoryPool.CreateNode();
+	KdTreeNode_t* KdTree::createNode() {
+		return memoryPool.createNode();
 	}
-	KdTreeNode_t* KdTree::AllocChildren() {
-		return memoryPool.AllocChildren();
+	KdTreeNode_t* KdTree::allocChildren() {
+		return memoryPool.allocChildren();
 	}
-
-	#if ENABLE_STATS
-	#define MARK_AS_LEAF( nTriangles )\
-		statsLock.Acquire();\
-		KdTree::leaves->Append( node );\
-		KdTree::depths->Append( depth );\
-		statsLock.Release();\
-		return;
-	#else
+	
 	#define MARK_AS_LEAF( nTriangles )\
 		return;
-	#endif
 
-	void KdTree::Build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds ) {
+	void KdTree::build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds ) {
 		using namespace RenderLib::Geometry;
-	#if ENABLE_STATS
-		statsLock.Acquire();
-		KdTree::treeDepth = max( treeDepth, depth );
-		statsLock.Release();
-	#endif
 		
 		if ( node->triangles.Num() <= KdTree::maxTrisPerLeaf || depth == KdTree::maxDepth ) {
 			MARK_AS_LEAF( node->triangles.size() )
@@ -106,11 +76,11 @@ namespace DataStructures {
 	#if ADAPTIVE_HEURISTIC		
 			float splitter = depth > maxDepth / 4 || node->triangles.Num() < KdTree::heuristicSwitchThreshold ? 
 								// more expensive and more accurate when we have fewer triangles per node
-								FindSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost ) :
+								findSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost ) :
 								// faster more general heuristic
-								FindSplitterMedian( triangleBounds, node->triangles, planeType, bounds, cost );
+								findSplitterMedian( triangleBounds, node->triangles, planeType, bounds, cost );
 	#else
-			float splitter = FindSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost );
+			float splitter = findSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost );
 	#endif
 
 			if ( j == 0  || cost < bestSplitCost ) {
@@ -165,7 +135,7 @@ namespace DataStructures {
 			MARK_AS_LEAF( node->triangles.Num() )
 		}
 
-		node->children = AllocChildren();
+		node->children = allocChildren();
 		node->planeType = bestPlaneType;
 		node->splitPlanePos = bestSplitter;
 
@@ -173,17 +143,11 @@ namespace DataStructures {
 		node->children[ 1 ].triangles.Swap( bestRightTriangles );
 		node->triangles.Clear();
 		
-	#if ENABLE_STATS
-		statsLock.Acquire();
-		KdTree::numNodes += 2;
-		statsLock.Release();
-	#endif
-
-		Build_r( &node->children[ 0 ], triangleBounds, depth + 1, leftBounds );
-		Build_r( &node->children[ 1 ], triangleBounds, depth + 1, rightBounds );
+		build_r( &node->children[ 0 ], triangleBounds, depth + 1, leftBounds );
+		build_r( &node->children[ 1 ], triangleBounds, depth + 1, rightBounds );
 	}
 
-	float KdTree::FindSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
+	float KdTree::findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
 		using namespace RenderLib::Geometry;
 
 		// use surface area heuristic
@@ -195,7 +159,7 @@ namespace DataStructures {
 			sorter[ 2 * i     ] = triangleBounds[ triangleIndices[ i ] ].bounds.min()[ axis ];
 			sorter[ 2 * i + 1 ] = triangleBounds[ triangleIndices[ i ] ].bounds.max()[ axis ];	
 		}
-		sorter.Sort( SplitterSort );
+		sorter.Sort( splitterSort );
 
 		float bestCost = FLT_MAX;
 		CoreLib::idList<float>::Iterator bestSplit = sorter.End();
@@ -262,7 +226,7 @@ namespace DataStructures {
 		return bestSplit != sorter.End() ? *bestSplit : FLT_MAX;
 	}
 
-	float KdTree::FindSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
+	float KdTree::findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
 
 		// use median
 
@@ -272,7 +236,7 @@ namespace DataStructures {
 			sorter[ i ] = triangleBounds[ triangleIndices[ i ] ].centroid[ axis ];
 		}
 
-		sorter.Sort( SplitterSort );
+		sorter.Sort( splitterSort );
 		if ( ( sorter.Num() % 2 ) == 0 ) {
 			int low = ( sorter.Num() - 1 ) / 2;
 			int high = ( sorter.Num() ) / 2;
@@ -283,12 +247,12 @@ namespace DataStructures {
 		return sorter[ mid ];
 	}
 
-	int KdTree::SplitterSort( const float* a, const float* b ) {
+	int KdTree::splitterSort( const float* a, const float* b ) {
 		const float d = *a - *b;
 		return d < 0.f ? -1 : ( d > 0.f ? 1 : 0 );
 	}
 
-	bool ClipSegment(float min, float max, float a, float b, float d, float& t0, float& t1) {
+	bool clipSegment(float min, float max, float a, float b, float d, float& t0, float& t1) {
 		const float threshold = 1.0e-6f;
 		if ( fabsf(d) < threshold) {
 			if (d > 0.0f) {
@@ -313,8 +277,8 @@ namespace DataStructures {
 			return false;
 		}
 
-		t0 = __max(u0, t0);
-		t1 = __min(u1, t1);
+		t0 = std::max(u0, t0);
+		t1 = std::min(u1, t1);
 
 		if (t1 < t0) {
 			return false;
@@ -327,52 +291,19 @@ namespace DataStructures {
 	 clips segment A-B with bounding box defined by Min-Max
 	 returns the clipping as two distances t0,t1 along the axis A-B
 	*/
-	bool ClipSegment(const RenderLib::Math::Point3f& A, const RenderLib::Math::Point3f& B, const RenderLib::Math::Point3f& Min, const RenderLib::Math::Point3f& Max, float& t0, float &t1 ) {
+	bool clipSegment(const RenderLib::Math::Point3f& A, const RenderLib::Math::Point3f& B, const RenderLib::Math::Point3f& Min, const RenderLib::Math::Point3f& Max, float& t0, float &t1 ) {
 		using namespace RenderLib::Math;
 		Vector3f D = (B - A);
 		D.normalize();
 
-		if (!ClipSegment(Min.x, Max.x, A.x, B.x, D.x, t0, t1) ||
-			!ClipSegment(Min.y, Max.y, A.y, B.y, D.y, t0, t1) ||
-			!ClipSegment(Min.z, Max.z, A.z, B.z, D.z, t0, t1)) {
+		if (!clipSegment(Min.x, Max.x, A.x, B.x, D.x, t0, t1) ||
+			!clipSegment(Min.y, Max.y, A.y, B.y, D.y, t0, t1) ||
+			!clipSegment(Min.z, Max.z, A.z, B.z, D.z, t0, t1)) {
 			return false;
 		}
 
 		return true;
 	}
-
-	#if ENABLE_STATS
-
-	void KdTree::Depth( int& min, int& max, int& avg ) const {
-		min = INT_MAX;
-		max = 0;
-		int total = 0;
-		for ( int i = 0; i < KdTree::depths->Num(); i++ ) {
-			min = (*KdTree::depths)[ i ] < min ? (*KdTree::depths)[ i ] : min;
-			max = (*KdTree::depths)[ i ] > max ? (*KdTree::depths)[ i ] : max;
-			total += (*KdTree::depths)[ i ];
-		}
-		avg = total / KdTree::depths->Num();
-	}
-
-
-	void KdTree::LeavesStats( int& numLeaves, int& avgTrisPerLeaf, float& percentEmptyLeaves ) {
-		numLeaves = KdTree::leaves->Num();
-		avgTrisPerLeaf = 0;
-		percentEmptyLeaves = numLeaves;
-		for ( int i = 0; i < numLeaves; i++ ) {
-			if ( (*KdTree::leaves)[ i ]->triangles.Num() > 0 ) {
-				avgTrisPerLeaf += (*KdTree::leaves)[ i ]->triangles.Num(); 
-				percentEmptyLeaves --;
-			}
-		}
-
-		avgTrisPerLeaf /= numLeaves;
-		percentEmptyLeaves /= numLeaves;
-
-	}
-
-	#endif
 
 	//////////////////////////////////////////////////////////////////////////
 
@@ -380,22 +311,22 @@ namespace DataStructures {
 		chunkSize( 2048 * sizeof(KdTreeNode_t) ) { 
 	}
 	KdTreeAllocator::~KdTreeAllocator() {
-		FreeAll();
+		freeAll();
 	}
 
-	void KdTreeAllocator::Init() { 
+	void KdTreeAllocator::init() { 
 		firstChunk = new memChunk_t( chunkSize );
 		currentChunk = firstChunk;
 	}
 
-	void KdTreeAllocator::FreeAll() {
+	void KdTreeAllocator::freeAll() {
 		delete( firstChunk );
 		firstChunk = NULL;
 	}
 
-	KdTreeNode_t* KdTreeAllocator::CreateNode() {
+	KdTreeNode_t* KdTreeAllocator::createNode() {
 		if ( currentChunk->allocated + 1 > chunkSize / sizeof(KdTreeNode_t) ) {
-			AllocChunk();
+			allocChunk();
 		}
 		KdTreeNode_t* children = currentChunk->memory + currentChunk->allocated;
 		memset( children, 0, sizeof( KdTreeNode_t ) );
@@ -405,9 +336,9 @@ namespace DataStructures {
 
 		return children;
 	}
-	KdTreeNode_t* KdTreeAllocator::AllocChildren() {
+	KdTreeNode_t* KdTreeAllocator::allocChildren() {
 		if ( currentChunk->allocated + 2 > chunkSize / sizeof(KdTreeNode_t) ) {
-			AllocChunk();
+			allocChunk();
 		}
 		KdTreeNode_t* children = currentChunk->memory + currentChunk->allocated;
 		memset( children, 0, 2 * sizeof( KdTreeNode_t ) );
@@ -420,7 +351,7 @@ namespace DataStructures {
 		return children;
 	}
 
-	void KdTreeAllocator::AllocChunk( ) {
+	void KdTreeAllocator::allocChunk( ) {
 		currentChunk->nextChunk = new memChunk_t( chunkSize );
 		currentChunk = currentChunk->nextChunk;
 	};

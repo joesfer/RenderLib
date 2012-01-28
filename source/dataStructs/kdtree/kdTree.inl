@@ -21,17 +21,18 @@
 */
 
 template< typename T >
-bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, const int _maxDepth, const int _minTrisPerLeaf ) {
+bool KdTree::init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, const int _maxDepth, const int _minTrisPerLeaf ) {
+	using namespace RenderLib::Math;
 
 	KdTree::maxDepth       = _maxDepth;
 	KdTree::maxTrisPerLeaf = _minTrisPerLeaf;
 
 	delete( root );
 
-	this->root = CreateNode();
+	this->root = createNode();
 
-	int numTris = (int)mesh->NumIndices() / 3;
-	const int *indices = mesh->GetIndices();
+	int numTris = (int)mesh->numIndices() / 3;
+	const int *indices = mesh->getIndices();
 
 	this->root->triangles.SetNum( numTris );
 	TriangleBounds_t* triangleBounds = new TriangleBounds_t[ numTris ];
@@ -40,31 +41,24 @@ bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 
 		this->root->triangles[ i ] = i;
 
-		const Point3f &p0 = mesh->GetVertices()[ indices[ 3 * i ]     ].position;
-		const Point3f &p1 = mesh->GetVertices()[ indices[ 3 * i + 1 ] ].position;
-		const Point3f &p2 = mesh->GetVertices()[ indices[ 3 * i + 2 ] ].position;
+		const Point3f &p0 = mesh->getVertices()[ indices[ 3 * i ]     ].position;
+		const Point3f &p1 = mesh->getVertices()[ indices[ 3 * i + 1 ] ].position;
+		const Point3f &p2 = mesh->getVertices()[ indices[ 3 * i + 2 ] ].position;
 
 		triangleBounds[ i ].centroid = ( p0 + p1 + p2 ) * ( 1.f / 3.f );
-		triangleBounds[ i ].bounds.AddPoint( p0 );
-		triangleBounds[ i ].bounds.AddPoint( p1 );
-		triangleBounds[ i ].bounds.AddPoint( p2 );
+		triangleBounds[ i ].bounds.expand( p0 );
+		triangleBounds[ i ].bounds.expand( p1 );
+		triangleBounds[ i ].bounds.expand( p2 );
 
-		bounds.AddBounds( triangleBounds[ i ].bounds );
+		boundingBox.expand( triangleBounds[ i ].bounds );
 	};
 
 	// Grow the bounding box a tiny amount proportional to the scene dimensions for robustness.
-	Vector3f offset = ( bounds.GetMaxs() - bounds.GetMins() ) * 1.0e-5f;
-	bounds.pMin -= offset;
-	bounds.pMax += offset;
+	Vector3f offset = ( boundingBox.max() - boundingBox.min() ) * 1.0e-5f;
+	boundingBox.min() -= offset;
+	boundingBox.max() += offset;
 
-#if ENABLE_STATS
-	// reset statistics`
-	KdTree::treeDepth = 0;
-	KdTree::numNodes = 0;
-	KdTree::leaves = new CoreLib::idList<KdTree::KdTreeNode_t*>();
-	KdTree::depths = new CoreLib::idList<int>();
-#endif
-	Build_r( root, triangleBounds, 0, bounds );
+	build_r( root, triangleBounds, 0, boundingBox );
 
 	// free resources
 	delete(triangleBounds);
@@ -73,12 +67,15 @@ bool KdTree::Init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 }
 
 template< typename T >
-bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup<T>* mesh, TraceIsectDesc& isect ) const {
+bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructures::ITriangleSoup<T>* mesh, TraceIsectDesc& isect ) const {
 	using namespace RenderLib::Raytracing;
+	using namespace RenderLib::Math;
+	using namespace RenderLib::Geometry;
+
 	Ray ray;
 	ray.origin = trace.startPoint;
 	ray.direction = trace.endPoint - ray.origin; 
-	ray.tMax = ray.direction.Normalize();	
+	ray.tMax = ray.direction.normalize();	
 	ray.tMin = 0;
 
 	float tMin = ray.tMin, tMax = ray.tMax; // entry/exit signed distance
@@ -91,7 +88,7 @@ bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 	}
 
 	// Intersect ray with scene bounds, find the entry and exit signed distances
-	if ( ClipSegment( trace.startPoint, trace.endPoint, bounds.pMin, bounds.pMax, tMin, tMax ) == false ) {
+	if ( clipSegment( trace.startPoint, trace.endPoint, boundingBox.min(), boundingBox.max(), tMin, tMax ) == false ) {
 		return false;
 	}
 
@@ -148,8 +145,8 @@ bool KdTree::TraceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 #pragma region LEAF_NODE
 			// Check for intersection against the primitives in this node
 
-			const int *indices       = mesh->GetIndices();
-			const T* verts = mesh->GetVertices();
+			const int *indices       = mesh->getIndices();
+			const T* verts = mesh->getVertices();
 			Point3f start = ray.origin + ray.direction * tMin;
 			Point3f end   = ray.origin + ray.direction * tMax;
 
