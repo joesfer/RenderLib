@@ -22,24 +22,28 @@
 
 #pragma once
 
-/// Main header
+#include <math/algebra/point/point3.h>
 
-#include "math\algebra\matrix\matrix3.h"
-#include "math\algebra\matrix\matrix4.h"
-#include "math\algebra\matrix\matrix5.h"
-#include "math\algebra\point\point2.h"
-#include "math\algebra\point\point3.h"
-#include "math\algebra\vector\vector2.h"
-#include "math\algebra\vector\vector3.h"
+namespace RenderLib {
+namespace DataStructures {
 
-#include "math\sampling\random.h"
-#include "math\sampling\lowDiscrepancy.h"
+/* 
+	=============================================================================
+	ITriangleSoup interface - abstract interface used to pass geometry 
+	information around. The actual implementation may vary depending on the
+	data source (e.g. a maya plugin, a standalone application, an obj parser...)
+	=============================================================================
+*/
+	template< typename VertexType >
+	class ITriangleSoup {
+	public:
+		virtual size_t		numIndices() const = 0;
+		virtual const int*	getIndices() const = 0;
 
-#include "geometry\bounds\boundingBox.h"
-#include "geometry\intersection\intersection.h"
-
-#include "dataStructs\photonMap\photonMap.h"
-#include "dataStructs\triangleSoup\triangleSoup.h"
-#include "dataStructs\kdtree\kdTree.h"
-
-#include "raytracing\ray\ray.h"
+		virtual size_t		numVertices() const = 0;
+		virtual const VertexType*	getVertices() const = 0;
+		
+		virtual RenderLib::Geometry::BoundingBox	calculateBounds() const = 0;
+	};
+}
+}
