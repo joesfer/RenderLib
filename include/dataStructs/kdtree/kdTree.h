@@ -42,7 +42,7 @@ namespace DataStructures {
 
 		int								planeType;
 		float                           splitPlanePos;
-		CoreLib::idList< int >			triangles;
+		CoreLib::List< int >			triangles;
 		KdTreeNode_t*					children;
 	};
 
@@ -101,8 +101,8 @@ namespace DataStructures {
 	private:
 		static void build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds );
 		
-		static float findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
-		static float findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
+		static float findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
+		static float findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
 		
 		static int splitterSort( const float* a, const float* b );
 		static KdTreeNode_t* createNode();

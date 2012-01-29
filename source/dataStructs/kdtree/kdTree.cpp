@@ -49,7 +49,7 @@ namespace DataStructures {
 	void KdTree::build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds ) {
 		using namespace RenderLib::Geometry;
 		
-		if ( node->triangles.Num() <= KdTree::maxTrisPerLeaf || depth == KdTree::maxDepth ) {
+		if ( node->triangles.size() <= (size_t)KdTree::maxTrisPerLeaf || depth == KdTree::maxDepth ) {
 			MARK_AS_LEAF( node->triangles.size() )
 		}
 
@@ -57,15 +57,15 @@ namespace DataStructures {
 		int bestPlaneType = 0;
 		float bestSplitter = 0.f;
 
-		float noSplitCost = costIntersect * node->triangles.Num(); // cost of not splitting the node
+		float noSplitCost = costIntersect * node->triangles.size(); // cost of not splitting the node
 		float bestSplitCost = FLT_MAX;
 
-		CoreLib::idList< int > bestLeftTriangles;
-		CoreLib::idList< int > bestRightTriangles;
-		bestLeftTriangles.AssureSize( node->triangles.Num() / 2 );
-		bestRightTriangles.AssureSize( node->triangles.Num() / 2 );
-		bestLeftTriangles.SetGranularity( 128 );
-		bestRightTriangles.SetGranularity( 128 );
+		CoreLib::List< int > bestLeftTriangles;
+		CoreLib::List< int > bestRightTriangles;
+		bestLeftTriangles.preAllocate( node->triangles.size() / 2 );
+		bestRightTriangles.preAllocate( node->triangles.size() / 2 );
+		bestLeftTriangles.setGranularity( 128 );
+		bestRightTriangles.setGranularity( 128 );
 
 		assert( node->triangles.Num() > 0 );
 
@@ -74,7 +74,7 @@ namespace DataStructures {
 			int planeType = j;
 			int sharedTris = 0;
 	#if ADAPTIVE_HEURISTIC		
-			float splitter = depth > maxDepth / 4 || node->triangles.Num() < KdTree::heuristicSwitchThreshold ? 
+			float splitter = depth > maxDepth / 4 || node->triangles.size() < (size_t)KdTree::heuristicSwitchThreshold ? 
 								// more expensive and more accurate when we have fewer triangles per node
 								findSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost ) :
 								// faster more general heuristic
@@ -90,23 +90,23 @@ namespace DataStructures {
 				bestSharedTris = sharedTris;
 				bestSplitCost = cost;
 
-				bestLeftTriangles.SetNum( 0, false );
-				bestRightTriangles.SetNum( 0, false );
+				bestLeftTriangles.resize( 0, false );
+				bestRightTriangles.resize( 0, false );
 
 				BoundingBox leftBounds = bounds;
 				leftBounds.max()[ bestPlaneType ] = bestSplitter;
 				BoundingBox rightBounds = bounds;
 				rightBounds.min()[ bestPlaneType ] = bestSplitter;
 
-				for ( int i = 0; i < node->triangles.Num(); i++ ) {
+				for ( size_t i = 0; i < node->triangles.size(); i++ ) {
 					int tri = node->triangles[ i ];
 					const BoundingBox& triBounds = triangleBounds[ tri ].bounds;
 
 					if ( triBounds.overlaps( leftBounds ) ) { 
-						bestLeftTriangles.Append( tri );
+						bestLeftTriangles.append( tri );
 					}
 					if ( triBounds.overlaps( rightBounds ) ) { 
-						bestRightTriangles.Append( tri );
+						bestRightTriangles.append( tri );
 					}
 				}
 
@@ -139,47 +139,47 @@ namespace DataStructures {
 		node->planeType = bestPlaneType;
 		node->splitPlanePos = bestSplitter;
 
-		node->children[ 0 ].triangles.Swap( bestLeftTriangles );
-		node->children[ 1 ].triangles.Swap( bestRightTriangles );
-		node->triangles.Clear();
+		node->children[ 0 ].triangles.swap( bestLeftTriangles );
+		node->children[ 1 ].triangles.swap( bestRightTriangles );
+		node->triangles.clear();
 		
 		build_r( &node->children[ 0 ], triangleBounds, depth + 1, leftBounds );
 		build_r( &node->children[ 1 ], triangleBounds, depth + 1, rightBounds );
 	}
 
-	float KdTree::findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
+	float KdTree::findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
 		using namespace RenderLib::Geometry;
 
 		// use surface area heuristic
 
-		CoreLib::idList< float > sorter;
-		sorter.SetNum( triangleIndices.Num() * 2 );
+		CoreLib::List< float > sorter;
+		sorter.resize( triangleIndices.size() * 2 );
 		
-		for ( int i = 0; i < triangleIndices.Num(); i ++ ) {
+		for ( size_t i = 0; i < triangleIndices.size(); i ++ ) {
 			sorter[ 2 * i     ] = triangleBounds[ triangleIndices[ i ] ].bounds.min()[ axis ];
 			sorter[ 2 * i + 1 ] = triangleBounds[ triangleIndices[ i ] ].bounds.max()[ axis ];	
 		}
-		sorter.Sort( splitterSort );
+		sorter.sort( splitterSort );
 
 		float bestCost = FLT_MAX;
-		CoreLib::idList<float>::Iterator bestSplit = sorter.End();
+		CoreLib::List<float>::ConstIterator bestSplit = sorter.end();
 
-		CoreLib::idList<int> left;
-		CoreLib::idList<int> right = triangleIndices;
+		CoreLib::List<int> left;
+		CoreLib::List<int> right = triangleIndices;
 
-		CoreLib::idList< float > ::Iterator newStart = sorter.Begin();
+		CoreLib::List< float >::ConstIterator newStart = sorter.begin();
 		float furtherSplitPos = nodeBounds.max()[ axis ];
-		while( newStart != sorter.End() && *newStart <= nodeBounds.min()[ axis ] ) { // find the first split pos inside the bounds
+		while( newStart != sorter.end() && *newStart <= nodeBounds.min()[ axis ] ) { // find the first split pos inside the bounds
 			newStart++;
 		} 
 			
-		CoreLib::idList< float > ::Iterator splitIt = newStart;
+		CoreLib::List< float >::ConstIterator splitIt = newStart;
 		float split;
-		while( splitIt != sorter.End() && *splitIt < furtherSplitPos ) {
+		while( splitIt != sorter.end() && *splitIt < furtherSplitPos ) {
 			split = *splitIt;
 
-			int leftCount = triangleIndices.Num() - right.Num();
-			for ( int j = 0; j < right.Num(); j++ ) {			
+			size_t leftCount = triangleIndices.size() - right.size();
+			for ( size_t j = 0; j < right.size(); j++ ) {			
 				float minBound = triangleBounds[ right[ j ] ].bounds.min()[ axis ];
 				float maxBound = triangleBounds[ right[ j ] ].bounds.max()[ axis ];
 
@@ -191,7 +191,7 @@ namespace DataStructures {
 				if (  maxBound < split || 
 					( maxBound == split && triangleBounds[ right[ j ] ].bounds.extents()[ axis ] > 1.0e-3f ) ) { 
 						// surely not on the right of the splitter
-						right.RemoveIndexFast( j );
+						right.removeIndexFast( j );
 						j--;			
 				}
 			}		
@@ -206,8 +206,8 @@ namespace DataStructures {
 			const float boundsEpsilon = 0.1f;
 			bool leftDegenerate  = leftBounds.extents().x < boundsEpsilon  || leftBounds.extents().y < boundsEpsilon  || leftBounds.extents().z < boundsEpsilon;
 			bool rightDegenerate = rightBounds.extents().x < boundsEpsilon || rightBounds.extents().y < boundsEpsilon || rightBounds.extents().z < boundsEpsilon;
-			float emptyBonus = ( ( leftCount == 0 && !leftDegenerate ) || ( right.Num() == 0 && !rightDegenerate ) ) ? costEmptyBonus : 0.0f;
-			float cost = costTraverse + costIntersect * (1.0f - emptyBonus) * (probabilityLeft * leftCount + probabilityRight * right.Num());
+			float emptyBonus = ( ( leftCount == 0 && !leftDegenerate ) || ( right.size() == 0 && !rightDegenerate ) ) ? costEmptyBonus : 0.0f;
+			float cost = costTraverse + costIntersect * (1.0f - emptyBonus) * (probabilityLeft * leftCount + probabilityRight * right.size());
 
 			if ( cost < bestCost ) {
 				bestCost = cost;
@@ -215,35 +215,35 @@ namespace DataStructures {
 			}
 
 			// skip potentially duplicate split positions
-			CoreLib::idList< float >::Iterator it2 = splitIt;
+			CoreLib::List< float >::ConstIterator it2 = splitIt;
 			do {
 				it2++;
-			} while ( it2 != sorter.End() && fabsf(*it2 - split ) < 1e-5f );	
+			} while ( it2 != sorter.end() && fabsf(*it2 - split ) < 1e-5f );	
 			splitIt = it2;
 		}
 
 		splitCost = bestCost;
-		return bestSplit != sorter.End() ? *bestSplit : FLT_MAX;
+		return bestSplit != sorter.end() ? *bestSplit : FLT_MAX;
 	}
 
-	float KdTree::findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::idList< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
+	float KdTree::findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
 
 		// use median
 
-		CoreLib::idList< float > sorter;
-		sorter.SetNum( triangleIndices.Num() );
-		for ( int i = 0; i < triangleIndices.Num(); i++ ) {
+		CoreLib::List< float > sorter;
+		sorter.resize( triangleIndices.size() );
+		for ( size_t i = 0; i < triangleIndices.size(); i++ ) {
 			sorter[ i ] = triangleBounds[ triangleIndices[ i ] ].centroid[ axis ];
 		}
 
-		sorter.Sort( splitterSort );
-		if ( ( sorter.Num() % 2 ) == 0 ) {
-			int low = ( sorter.Num() - 1 ) / 2;
-			int high = ( sorter.Num() ) / 2;
+		sorter.sort( splitterSort );
+		if ( ( sorter.size() % 2 ) == 0 ) {
+			size_t low = ( sorter.size() - 1 ) / 2;
+			size_t high = ( sorter.size() ) / 2;
 			return ( sorter[ low ] + sorter[ high ] ) * 0.5f;
 		}
 
-		int mid = ( sorter.Num() - 1 ) / 2;
+		size_t mid = ( sorter.size() - 1 ) / 2;
 		return sorter[ mid ];
 	}
 
@@ -330,8 +330,8 @@ namespace DataStructures {
 		}
 		KdTreeNode_t* children = currentChunk->memory + currentChunk->allocated;
 		memset( children, 0, sizeof( KdTreeNode_t ) );
-		children->triangles.SetGranularity( 1024 );
-		children->triangles.Clear();
+		children->triangles.setGranularity( 1024 );
+		children->triangles.clear();
 		currentChunk->allocated ++;
 
 		return children;
@@ -342,10 +342,10 @@ namespace DataStructures {
 		}
 		KdTreeNode_t* children = currentChunk->memory + currentChunk->allocated;
 		memset( children, 0, 2 * sizeof( KdTreeNode_t ) );
-		children[ 0 ].triangles.SetGranularity( 1024 );
-		children[ 0 ].triangles.Clear();
-		children[ 1 ].triangles.SetGranularity( 1024 );
-		children[ 1 ].triangles.Clear();
+		children[ 0 ].triangles.setGranularity( 1024 );
+		children[ 0 ].triangles.clear();
+		children[ 1 ].triangles.setGranularity( 1024 );
+		children[ 1 ].triangles.clear();
 		currentChunk->allocated += 2;
 
 		return children;

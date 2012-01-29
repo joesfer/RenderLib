@@ -31,13 +31,13 @@ bool KdTree::init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 
 	this->root = createNode();
 
-	int numTris = (int)mesh->numIndices() / 3;
+	size_t numTris = mesh->numIndices() / 3;
 	const int *indices = mesh->getIndices();
 
-	this->root->triangles.SetNum( numTris );
+	this->root->triangles.resize( numTris );
 	TriangleBounds_t* triangleBounds = new TriangleBounds_t[ numTris ];
 
-	for ( int i = 0; i < numTris ; i++ ) {
+	for ( size_t i = 0; i < numTris ; i++ ) {
 
 		this->root->triangles[ i ] = i;
 
@@ -154,7 +154,7 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 			float t, v, w;
 
 			if ( trace.doubleSided == true ) {			
-				for ( int i = 0; i < currNode->triangles.Num(); i++ ) {
+				for ( size_t i = 0; i < currNode->triangles.size(); i++ ) {
 
 					const int triangleOffset = currNode->triangles[ i ] * 3;
 
@@ -176,7 +176,7 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 					}
 				}
 			} else {
-				for ( int i = 0; i < currNode->triangles.Num(); i++ ) {
+				for ( size_t i = 0; i < currNode->triangles.size(); i++ ) {
 
 					const int triangleOffset = currNode->triangles[ i ] * 3;
 
