@@ -1,4 +1,4 @@
-#include "lowDiscrepancy.h"
+#include "math/sampling/lowDiscrepancy.h"
 
 #define _USE_MATH_DEFINES // define M_PI
 #include <math.h>

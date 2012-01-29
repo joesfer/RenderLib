@@ -2,7 +2,7 @@
 #pragma hdrstop
 
 #include <assert.h>
-#include "kdTree.h"
+#include "dataStructs/kdtree/kdTree.h"
 #include <CoreLib.h>
 
 namespace RenderLib {
