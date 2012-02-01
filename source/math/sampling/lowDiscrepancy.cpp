@@ -37,7 +37,8 @@ namespace Math {
 			v = 0;
 			ip = 1.0f/p2; // inverse of p2
 			for (p=ip, kk=k ; kk ; p*=ip, kk/=p2) { // kk = (int)(kk/p2)
-				if ((a = kk % p2)) {
+				a = kk % p2;
+				if ( a != 0 ) {
 					v += a * p;
 				}
 			}
@@ -83,7 +84,8 @@ namespace Math {
 			phi = 0;
 			ip = 1.0f/p2; // inverse of p2
 			for (p=ip, kk=k ; kk ; p*=ip, kk/=p2) {// kk = (int)(kk/p2)
-				if ((a = kk % p2)) {
+				a = kk % p2;
+				if ( a != 0) {
 					phi += a * p;
 				}
 			}

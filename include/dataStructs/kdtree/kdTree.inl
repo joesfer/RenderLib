@@ -34,12 +34,12 @@ bool KdTree::init( const RenderLib::DataStructures::ITriangleSoup<T>* mesh, cons
 	size_t numTris = mesh->numIndices() / 3;
 	const int *indices = mesh->getIndices();
 
-	this->root->triangles.resize( numTris );
+	this->root->triangles.resize( numTris, true );
 	TriangleBounds_t* triangleBounds = new TriangleBounds_t[ numTris ];
 
 	for ( size_t i = 0; i < numTris ; i++ ) {
 
-		this->root->triangles[ i ] = i;
+		this->root->triangles[ i ] = (int)i;
 
 		const Point3f &p0 = mesh->getVertices()[ indices[ 3 * i ]     ].position;
 		const Point3f &p1 = mesh->getVertices()[ indices[ 3 * i + 1 ] ].position;

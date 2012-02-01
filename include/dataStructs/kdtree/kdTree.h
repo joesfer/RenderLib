@@ -59,6 +59,8 @@ namespace DataStructures {
 		KdTreeNode_t* createNode();
 		KdTreeNode_t* allocChildren();
 	private:	
+		explicit KdTreeAllocator(const KdTreeAllocator& other); // disallow copy
+		KdTreeAllocator & operator=( const KdTreeAllocator & ); // disallow copy
 
 		void allocChunk();
 
@@ -102,7 +104,7 @@ namespace DataStructures {
 		static void build_r( KdTreeNode_t* node, const TriangleBounds_t* triangleBounds, int depth, const RenderLib::Geometry::BoundingBox& bounds );
 		
 		static float findSplitterSAH( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
-		static float findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost );
+		static float findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis );
 		
 		static int splitterSort( const float* a, const float* b );
 		static KdTreeNode_t* createNode();
