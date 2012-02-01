@@ -184,8 +184,8 @@ namespace DataStructures {
 			}
 
 			// Rearrange the balanced KDTree, building a heap
-			unsigned int offset, j = 0;
-			unsigned auxIdx = 0;
+			int offset, j = 0;
+			int auxIdx = 0;
 
 			PhotonMapSample_t auxSample = sampleMap[j];
 			mapping.resize( sampleMap.size() );
@@ -201,7 +201,7 @@ namespace DataStructures {
 					mapping[j] = auxIdx;
 
 					if (i < sampleMap.size()) {
-						for ( ; auxIdx < sampleMap.size() - 1; auxIdx++) { 
+						for ( ; auxIdx < (int)sampleMap.size() - 1; auxIdx++) { 
 							if(balancedAux[auxIdx] != NULL) { 
 								break;
 							}
