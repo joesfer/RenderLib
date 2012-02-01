@@ -49,7 +49,6 @@ namespace Math {
 		inline bool operator != (const Vector3<T>& v) const;
 
 		inline T normalize( void );
-		inline Vector3<T>  cross( const Vector3<T>& v ) const;
 		inline T length() const;
 		inline T lengthSquared() const;
 

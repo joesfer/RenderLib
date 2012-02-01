@@ -105,12 +105,12 @@ inline T Point3<T>::distanceSquared(const Point3<T>& p1, const Point3<T>& p2) {
 
 template< typename T >
 inline T Point3<T>::distanceTo( const Point3<T>& p2 ) const { 
-	return Distance( *this, p2 ); 
+	return distance( *this, p2 ); 
 }
 
 template< typename T >
 inline T Point3<T>::distanceToOrigin() const { 
-	return Distance( *this, Point3<T>() ); 
+	return distance( *this, Point3<T>() ); 
 }
 
 template< typename T >

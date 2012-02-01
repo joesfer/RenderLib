@@ -121,12 +121,12 @@ inline bool Vector2<T>::operator != (const Vector2<T>& v) const {
 }
 
 template< typename T >
-inline static T Vector2<T>::dot(const Vector2<T>& v1, const Vector2<T>& v2) {
+/*static*/ inline T Vector2<T>::dot(const Vector2<T>& v1, const Vector2<T>& v2) {
 	return v1.x * v2.x + v1.y * v2.y;
 }
 
 template< typename T >
-inline static Vector2<T> Vector2<T>::normalize(const Vector2<T>& v)  {
+/*static*/ inline Vector2<T> Vector2<T>::normalize(const Vector2<T>& v)  {
 	T length = sqrt(v.x * v.x + v.y * v.y);
 	assert(length > 0);
 	return Vector2<T>(v.x / length, v.y / length);

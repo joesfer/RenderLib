@@ -49,6 +49,8 @@ namespace Math {
 		inline static Point3<T> clamp(const Point3<T>& v, const Point3<T>& min, const Point3<T>& max );
 		inline static Point3<T> clamp(const Point3<T>& v, T min, T max);
 		inline static Point3<T> clamp(const Point3<T>& v, T max);
+
+		inline Vector3<T> fromOrigin() const { return Vector3<T>(x,y,z); } // point-vector conversion
 	
 	public:		
 		T x, y, z;

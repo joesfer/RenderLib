@@ -160,11 +160,6 @@ template< typename T >
 }
 
 template< typename T >
-inline Vector3<T> Vector3<T>::cross( const Vector3<T>& v ) const {
-	return Cross( *this, v );
-}
-
-template< typename T >
 inline T Vector3<T>::length() const { 
 	return sqrt(x * x + y * y + z * z); 
 }	
