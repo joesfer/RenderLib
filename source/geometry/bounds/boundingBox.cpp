@@ -48,6 +48,15 @@ namespace Geometry {
 				pMax[ i ] = std::max( pMax[ i ], p[ i ] );
 			}
 		}
+		
+		void BoundingBox::expand( const ::RenderLib::Math::Point3d& p ) {
+			for( int i = 0; i < 3; i++ ) {
+				const float fP_i = float(p[i]);
+				pMin[ i ] = std::min( pMin[ i ], fP_i );
+				pMax[ i ] = std::max( pMax[ i ], fP_i );
+			}
+		}
+
 		void BoundingBox::expand( const BoundingBox& b ) {
 			for( int i = 0; i < 3; i++ ) {
 				pMin[ i ] = std::min( pMin[ i ], b.pMin[ i ] );
