@@ -62,14 +62,14 @@ namespace DataStructures {
 
 		CoreLib::List< int > bestLeftTriangles;
 		CoreLib::List< int > bestRightTriangles;
-		bestLeftTriangles.preAllocate( node->triangles.size() / 2 );
-		bestRightTriangles.preAllocate( node->triangles.size() / 2 );
 		bestLeftTriangles.setGranularity( 128 );
 		bestRightTriangles.setGranularity( 128 );
+		bestLeftTriangles.preAllocate( node->triangles.size() / 2 );
+		bestRightTriangles.preAllocate( node->triangles.size() / 2 );
 
-		assert( node->triangles.Num() > 0 );
+		assert( node->triangles.size() > 0 );
 
-		float cost;
+		float cost = 0;
 		for ( int j = 0; j < 3; j++ ) {
 			int planeType = j;
 			int sharedTris = 0;
@@ -78,7 +78,7 @@ namespace DataStructures {
 								// more expensive and more accurate when we have fewer triangles per node
 								findSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost ) :
 								// faster more general heuristic
-								findSplitterMedian( triangleBounds, node->triangles, planeType, bounds, cost );
+								findSplitterMedian( triangleBounds, node->triangles, planeType );
 	#else
 			float splitter = findSplitterSAH( triangleBounds, node->triangles, planeType, bounds, cost );
 	#endif
@@ -110,12 +110,12 @@ namespace DataStructures {
 					}
 				}
 
-				assert( bestLeftTriangles.Num() + bestRightTriangles.Num() >= node->triangles.Num()) ;
+				assert( bestLeftTriangles.size() + bestRightTriangles.size() >= node->triangles.size()) ;
 			}
 		}
 
 		if ( bestSplitCost >= noSplitCost ) { // it is not worth splitting
-			MARK_AS_LEAF( node->triangles.Num() )
+			MARK_AS_LEAF( node->triangles.size() )
 		}
 
 		BoundingBox leftBounds = bounds;
@@ -153,7 +153,7 @@ namespace DataStructures {
 		// use surface area heuristic
 
 		CoreLib::List< float > sorter;
-		sorter.resize( triangleIndices.size() * 2 );
+		sorter.resize( triangleIndices.size() * 2, true );
 		
 		for ( size_t i = 0; i < triangleIndices.size(); i ++ ) {
 			sorter[ 2 * i     ] = triangleBounds[ triangleIndices[ i ] ].bounds.min()[ axis ];
@@ -226,24 +226,24 @@ namespace DataStructures {
 		return bestSplit != sorter.end() ? *bestSplit : FLT_MAX;
 	}
 
-	float KdTree::findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis, const RenderLib::Geometry::BoundingBox& nodeBounds, float& splitCost ) {
+	float KdTree::findSplitterMedian( const TriangleBounds_t* triangleBounds, const CoreLib::List< int >& triangleIndices, int axis ) {
 
 		// use median
 
 		CoreLib::List< float > sorter;
-		sorter.resize( triangleIndices.size() );
+		sorter.resize( triangleIndices.size(), true );
 		for ( size_t i = 0; i < triangleIndices.size(); i++ ) {
 			sorter[ i ] = triangleBounds[ triangleIndices[ i ] ].centroid[ axis ];
 		}
 
 		sorter.sort( splitterSort );
 		if ( ( sorter.size() % 2 ) == 0 ) {
-			size_t low = ( sorter.size() - 1 ) / 2;
-			size_t high = ( sorter.size() ) / 2;
+			int low = ( (int)sorter.size() - 1 ) / 2;
+			int high = ( sorter.size() ) / 2;
 			return ( sorter[ low ] + sorter[ high ] ) * 0.5f;
 		}
 
-		size_t mid = ( sorter.size() - 1 ) / 2;
+		int mid = ( (int)sorter.size() - 1 ) / 2;
 		return sorter[ mid ];
 	}
 
