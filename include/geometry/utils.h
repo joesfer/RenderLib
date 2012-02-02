@@ -57,7 +57,7 @@ namespace Geometry {
 
 	// Triangle Area using Heron's formula
 	template< typename T >
-	T TriangleArea( const RenderLib::Math::Point3<T> &a, const RenderLib::Math::Point3<T> &b, const RenderLib::Math::Point3<T> &c ) {
+	T triangleArea( const RenderLib::Math::Point3<T> &a, const RenderLib::Math::Point3<T> &b, const RenderLib::Math::Point3<T> &c ) {
 		const T sa = b.distanceTo( c );
 		const T sb = a.distanceTo( c );
 		const T sc = a.distanceTo( b );

@@ -33,13 +33,439 @@ namespace RenderLib {
 namespace Geometry {
 namespace Delaunay3D {
 
+	// Foreward declarations /////////////////////////////////////////////////
+
+	// Predicates //////////////////////////////////////////////////////////////////////////
+
+	// Determines whether p is above the plane ( > 0 ), below ( < 0 ) or on the plane ( = 0 )
+	REAL orient( const Point& a, 
+		const Point& b, 
+		const Point& c, 
+		const Point& p );
+
+	// returns > 0 if p is inside the sphere described by A,B,C,D, < 0 outside, = 0 on the sphere
+	REAL inSphere( const Point& a, 
+		const Point& b, 
+		const Point& c, 
+		const Point& d, 
+		const Point& p );
+
+	// Is p inside tetrahedron t?
+	bool inside( const Point& p, const tetrahedron_t& t, const CoreLib::List< Point >& vertices );
+
+	// whether 4 points are coplanar
+	bool coplanar( const Point& a, const Point& b, const Point& c, const Point& d );
+
+	// Bistellar flips /////////////////////////////////////////////////////////////////////
+
+	void flip14( const unsigned int pointIndex, const unsigned int tetrahedron, 
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		const CoreLib::List< Point >& vertices,
+		unsigned int resultingTetrahedra[4] );
+
+	bool flip23( const unsigned int tetrahedron1, const unsigned int tetrahedron2, 							
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		const CoreLib::List< Point >& vertices,
+		unsigned int resultingTetrahedra[3] );
+
+	void flip32( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, 							
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		const CoreLib::List< Point >& vertices,
+		unsigned int resultingTetrahedra[2] );
+
+	void flip44( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, const unsigned int tetrahedron4,							
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		const CoreLib::List< Point >& vertices,
+		unsigned int resultingTetrahedra[4] );
+
+	// Auxiliary operations ////////////////////////////////////////////////////////////////
+
+	void containingTetrahedron( const RenderLib::Math::Point3f& center, const float radius, // circumsphere  
+		tetrahedron_t& t, CoreLib::List< Point >& points );
+
+	// Given a tetrahedron and a face, ensures the potential adjacent tetrahedron sharing
+	// that face points to the given tetrahedron.
+	void adjustNeighborVicinity( const int iT, const int f, CoreLib::List< tetrahedron_t >& tetrahedra );
+
+	// returns the index of the tetrahedron containing p, or -1 if not found. 
+	// It retrieves the result by searching from a given sourceT tetrahedron index. 
+	int walk( const Point& p, const int sourceT, const CoreLib::List< Point >& vertices, const CoreLib::List< tetrahedron_t >& tetrahedra );
+
+	// Flips two given tetrahedra: T and Ta, which are non-Delaunay, 
+	// into a Delaunay configuration using bistellar flips
+	void flip(  const int T, const int Ta, const int p,
+		const CoreLib::List< Point >& vertices,
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		std::stack< unsigned int >& needTesting );
+
+	void insertOnePoint( const CoreLib::List< Point >& vertices, const int pointIndex, 
+		CoreLib::List< tetrahedron_t >& tetrahedra );
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	// tetrahedron_t
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-#if LEAVE_CONTAINING_TETRAHEDRON 
+	namespace Tetrahedron { // all operations related to tetrahedron_t
+
+		//////////////////////////////////////////////////////////////////////
+		// Forward declarations //////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////
+
+		void markInvalid( tetrahedron_t& t );
+		REAL getFaceArea( const tetrahedron_t& t, const int f, const CoreLib::List< Point >& vertices );
+		int getFaceFromVertices( const tetrahedron_t& t, const int a, const int b, const int c );
+		int getVertexOutsideFace( const tetrahedron_t& t, int f );
+		bool sameWinding( const int v1[3], const int v2[3] );
+		int sharedFace( const tetrahedron_t& t, const tetrahedron_t& other, bool reversed );
+		bool adjacentTo( const tetrahedron_t& t, const tetrahedron_t& other );
+		bool checkNeighbors( const tetrahedron_t& t, const int thisIndex, const CoreLib::List< tetrahedron_t >& tetrahedra, const CoreLib::List< Point >& vertices );
+		void destroy( tetrahedron_t& t, CoreLib::List< tetrahedron_t >& tetrahedra );
+		bool sameOrientation( const tetrahedron_t& t, const int face, const tetrahedron_t& other, const int otherFace, const CoreLib::List< Point >& vertices );
+		void reverseFace( tetrahedron_t& t, const int f );
+		bool isFlat( const tetrahedron_t& t, const CoreLib::List< Point >& vertices );
+		void fixFaceOrientations( tetrahedron_t& t, const CoreLib::List< Point >& vertices );
+		bool checkFaceOrientations( const tetrahedron_t& t, const CoreLib::List< Point >& vertices );	
+
+		//////////////////////////////////////////////////////////////////////
+
+		bool checkFaceOrientations( const tetrahedron_t& T, 
+									const CoreLib::List< Point >& vertices ) {
+			
+			using namespace RenderLib::Geometry::Delaunay3D;
+
+			// check whether the tetrahedron centroid lies behind every face
+
+			const Point& vo = vertices[ T.v[ 0 ] ];
+			const Point& va = vertices[ T.v[ 1 ] ];
+			const Point& vb = vertices[ T.v[ 2 ] ];
+			const Point& vc = vertices[ T.v[ 3 ] ];
+#if 0 // using centroid
+			const Vector3<REAL> a = va - vo;
+			const Vector3<REAL> b = vb - vo;
+			const Vector3<REAL> c = vc - vo;
+			Point C = vo + ( a + b + c ) / 4;
+#elif 1 // using incenter
+			const REAL a = getFaceArea( T, 2, vertices );
+			const REAL b = getFaceArea( T, 3, vertices );
+			const REAL c = getFaceArea( T, 1, vertices );
+			const REAL d = getFaceArea( T, 0, vertices );
+			const REAL t = a + b + c + d;
+			Point C = vo * ( a / t ) + va * ( b / t ) + vb * ( c / t ) + vc * ( d / t);
+#else // monge point
+			const Vector3<REAL> a = va - vo;
+			const Vector3<REAL> b = vb - vo;
+			const Vector3<REAL> c = vc - vo;
+			const Vector3<REAL> bCrossC = Vector3<REAL>::cross( b, c );
+			const Vector3<REAL> cCrossA = Vector3<REAL>::cross( c, a );
+			const Vector3<REAL> aCrossB = Vector3<REAL>::cross( a, b );
+
+			Point C = vo + ( a * ( ( b + c ) * bCrossC ) + b * ( ( c + a ) * cCrossA ) + c * ( ( a + b ) * aCrossB ) ) / ( a * bCrossC * 2 );
+
+#endif
+			int v2[3];
+			for( int i = 0; i < 4; i++ ) {
+				T.getFaceVertices( i, v2[0], v2[1], v2[2] );	
+				if( orient( vertices[ v2[0] ], vertices[ v2[1] ], vertices[ v2[2] ], C ) > 0 ) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// isFlat:
+		// A tetrahedron is flat if its 4 vertices lie in the same plane
+		// A flat tetrahedron has no circumsphere
+		//////////////////////////////////////////////////////////////////////////
+		bool isFlat( const tetrahedron_t& t, const CoreLib::List< Point >& vertices ) {
+			using namespace RenderLib::Geometry::Delaunay3D;
+			return coplanar( vertices[ t.v[ 0 ] ], vertices[ t.v[ 1 ] ], vertices[ t.v[ 2 ] ], vertices[ t.v[ 3 ] ] );
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// fixFaceOrientations:
+		// ensure the tetrahedron centroid lies behind every face
+		//////////////////////////////////////////////////////////////////////////
+		void fixFaceOrientations( tetrahedron_t& t, const CoreLib::List< Point >& vertices ) {
+			using namespace RenderLib::Math;
+
+			// check whether the tetrahedron centroid lies behind every face
+
+			const Point& vo = vertices[ t.v[ 0 ] ];
+			const Point& va = vertices[ t.v[ 1 ] ];
+			const Point& vb = vertices[ t.v[ 2 ] ];
+			const Point& vc = vertices[ t.v[ 3 ] ];
+
+			if ( isFlat( t, vertices ) ) {
+				// the test makes no sense on flat tetrahedra as the centroid is neither inside nor outside the tetrahedron
+				return;
+			}
+#if 1 // using centroid
+			const Vector3<REAL> a = va - vo;
+			const Vector3<REAL> b = vb - vo;
+			const Vector3<REAL> c = vc - vo;
+			Point C = vo + ( a + b + c ) / 4;
+#elif 1 // using incenter
+			const REAL a = getFaceArea( t, 2, vertices );
+			const REAL b = getFaceArea( t, 3, vertices );
+			const REAL c = getFaceArea( t, 1, vertices );
+			const REAL d = getFaceArea( t, 0, vertices );
+			const REAL t = a + b + c + d;
+			Point C = vo * ( a / t ) + va * ( b / t ) + vb * ( c / t ) + vc * ( d / t);
+#else // monge point
+			const Vector3<REAL> a = va - vo;
+			const Vector3<REAL> b = vb - vo;
+			const Vector3<REAL> c = vc - vo;
+			const Vector3<REAL> bCrossC = Vector3<REAL>::cross( b, c );
+			const Vector3<REAL> cCrossA = Vector3<REAL>::cross( c, a );
+			const Vector3<REAL> aCrossB = Vector3<REAL>::cross( a, b );
+
+			Point C = vo + ( a * ( ( b + c ) * bCrossC ) + b * ( ( c + a ) * cCrossA ) + c * ( ( a + b ) * aCrossB ) ) / ( a * bCrossC * 2 );
+
+#endif
+			int v2[3];
+			for( int i = 0; i < 4; i++ ) {
+				t.getFaceVertices( i, v2[0], v2[1], v2[2] );
+				const Vector3<REAL> faceNormal = Vector3<REAL>::normalize( Vector3<REAL>::cross( vertices[ v2[2] ] - vertices[ v2[0] ], vertices[ v2[1] ] - vertices[ v2[0] ] ) ); // we can get away not normalizing it, since we're just interested in the distance sign
+				const REAL d = Vector3<REAL>::dot(faceNormal, vertices[ v2[0] ].fromOrigin());
+				const REAL distToPlane = Vector3<REAL>::dot(faceNormal, C.fromOrigin()) - d;
+				const REAL epsilon = 1e-1;
+				if ( distToPlane > epsilon ) { // the centroid should be behind the plane
+					reverseFace( t, i ); 
+				}
+			}				
+		}
+
+		void markInvalid( tetrahedron_t& t ) {
+			for( int i = 0; i < 4; i++ ) {
+				t.v[ i ] = -1;
+				t.neighbors[ i ] = -1;
+			}
+			t.face[ 0 ][ 0 ] = 0; t.face[ 0 ][ 1 ] = 1; t.face[ 0 ][ 2 ] = 2;
+			t.face[ 1 ][ 0 ] = 0; t.face[ 1 ][ 1 ] = 3; t.face[ 1 ][ 2 ] = 1;
+			t.face[ 2 ][ 0 ] = 1; t.face[ 2 ][ 1 ] = 3; t.face[ 2 ][ 2 ] = 2;
+			t.face[ 3 ][ 0 ] = 2; t.face[ 3 ][ 1 ] = 3; t.face[ 3 ][ 2 ] = 0;
+		}
+
+		REAL getFaceArea( const tetrahedron_t& t, const int f, const CoreLib::List< Point >& vertices ) {
+			using namespace RenderLib::Geometry;
+			switch( f ) {
+					case 0:
+						return triangleArea( vertices[ t.v[0] ], vertices[ t.v[1] ], vertices[ t.v[2] ] );
+					case 1:
+						return triangleArea( vertices[ t.v[0] ], vertices[ t.v[3] ], vertices[ t.v[1] ] );
+					case 2:
+						return triangleArea( vertices[ t.v[1] ], vertices[ t.v[3] ], vertices[ t.v[2] ] );
+					case 3:
+						return triangleArea( vertices[ t.v[2] ], vertices[ t.v[3] ], vertices[ t.v[0] ] );
+					default: 
+						assert( false );
+						return -1;
+			}
+		}
+
+		int getFaceFromVertices( const tetrahedron_t& t, const int a, const int b, const int c ) {
+			for( int i = 0; i < 4; i++ ) {
+				int check = 0;
+				for( int j = 0; j < 3; j++ ) {
+					if ( t.v[ t.face[ i ][ j ] ] == a || 
+						 t.v[ t.face[ i ][ j ] ] == b || 
+						 t.v[ t.face[ i ][ j ] ] == c ) {
+						check |= ( 1 << j );						
+					}
+				}
+				if ( check == 7 /* 111 */ ) {
+					return i;
+				}
+			}
+
+			return -1;
+		}
+
+		int getVertexOutsideFace( const tetrahedron_t& t, int f ) {
+			assert( f >= 0 && f < 4 );
+			int check = 0;
+			for( int i = 0; i < 3; i++ ) {
+				check |= ( 1 << t.face[ f ][ i ] );
+			}
+			switch( check ) {
+					case 14: // 1110
+						return t.v[0];
+					case 13: // 1101
+						return t.v[1];
+					case 11: // 1011
+						return t.v[2];
+					case 7: // 0111
+						return t.v[3];
+					default:
+						assert( false );
+						return -1;
+			}
+		}
+
+		////////////////////////////////////////////////////////////////////////
+		// sameWinding:
+		// We use this function to check whether two faces sharing the same vertices are reversed
+		// without needing to calculate the normal
+		////////////////////////////////////////////////////////////////////////
+		bool sameWinding( const int v1[3], const int v2[3] ) {
+			int offset2;
+			for( offset2 = 0; offset2 < 3; offset2++ ) {
+				if ( v2[ offset2 ] == v1[ 0 ] ) {
+					break;
+				}
+			}
+			if ( offset2 == 3 ) { 
+				// sequences are not even the same
+				return false;
+			}
+			for( int offset1 = 1; offset1 < 3; offset1++ ) {
+				offset2 = ( offset2 + 1 ) % 3;
+				if ( v1[ offset1 ] != v2[ offset2 ] ) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		int sharedFace( const tetrahedron_t& t, const tetrahedron_t& other, bool reversed ) {
+			int verts[ 3 ];
+			int verts2[3];
+			for( int i = 0; i < 4; i++ ) {
+				other.getFaceVertices( i, verts[ 0 ], verts[ 1 ], verts[ 2 ] );
+				int face = getFaceFromVertices( t, verts[ 0 ], verts[ 2 ], verts[ 1 ] ); // reverse the face order as they're confronted
+				if ( face >= 0 ) {
+					t.getFaceVertices( face, verts2[ 0 ], verts2[ 1 ], verts2[ 2 ] );
+
+					if ( reversed &&  // tetrahedra are adjacent on each side of the adjacent face, so the face is declared on reverse order for each tetrahedron 
+						sameWinding( verts, verts2 ) ) {
+							face = -1;					
+					} 
+					if ( !reversed && // the tetrahedra overlap on the same space (during flip 44 for example) so the shared faces have the same orientation
+						!sameWinding( verts, verts2 ) ) {
+							face = -1;					
+					}
+					if ( face >= 0 ) {
+						return face;
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		bool adjacentTo( const tetrahedron_t& t, const tetrahedron_t& other ) {
+			return sharedFace( t, other, true ) >= 0;
+		}
+
+		bool checkNeighbors( const tetrahedron_t& t, const int thisIndex, const CoreLib::List< tetrahedron_t >& tetrahedra, const CoreLib::List< Point >& vertices ) {
+			for( int i = 0; i < 4; i++ ) {
+				if ( t.neighbors[ i ] >= 0 ) {
+					const tetrahedron_t& neighbor = tetrahedra[ t.neighbors[ i ] ];
+					if ( !neighbor.isValid() ) {
+						return false;
+					}
+
+					const int sf = sharedFace( neighbor, t, true );
+					if ( sf < 0 ) {
+						return false;
+					}
+
+					if ( sameOrientation( t, i, neighbor, sf, vertices ) ) { // they should be reversed
+						return false;
+					}
+
+					if ( neighbor.neighbors[ sf ] != thisIndex ) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		void destroy( tetrahedron_t& t, CoreLib::List< tetrahedron_t >& tetrahedra ) {
+			// unlink neighbors
+			for( int i = 0; i < 4; i++ ) {
+				if ( t.neighbors[ i ] >= 0 ) {
+					tetrahedron_t& n = tetrahedra[ t.neighbors[ i ] ];
+					if ( !n.isValid() ) {
+						continue;
+					}
+					const int sf = sharedFace( n, t, true );
+					n.neighbors[ sf ] = -1;
+				}
+			}
+
+			markInvalid(t);
+		}
+
+		////////////////////////////////////////////////////////////////////////
+		// sameOrientation:
+		// checks whether 'face' has the same orientation than 'otherFace' 
+		// (normals point toward the same direction)
+		////////////////////////////////////////////////////////////////////////
+		bool sameOrientation( const tetrahedron_t& t, const int face, const tetrahedron_t& other, const int otherFace, const CoreLib::List< Point >& vertices ) {
+			using namespace RenderLib::Math;
+			int vi1[3], vi2[3];
+			t.getFaceVertices( face, vi1[0], vi1[1], vi1[2] );
+			other.getFaceVertices( otherFace, vi2[0], vi2[1], vi2[2] );
+			Vector3<REAL> n1 = Vector3<REAL>::cross( vertices[vi1[1]] - vertices[vi1[0]], vertices[vi1[2]] - vertices[vi1[0]] );
+			Vector3<REAL> n2 = Vector3<REAL>::cross( vertices[vi2[1]] - vertices[vi2[0]], vertices[vi2[2]] - vertices[vi2[0]] );
+			return Vector3<REAL>::dot(n1, n2) > (REAL)0;
+		}
+
+		void reverseFace( tetrahedron_t& t, const int f ) {
+			const int v0 = t.face[ f ][ 0 ];
+			t.face[ f ][ 0 ] = t.face[ f ][ 2 ];
+			t.face[ f ][ 2 ] = v0;
+		}
+
+	} // namespace Tetrahedron
+
+	tetrahedron_t::tetrahedron_t()
+	{
+		Tetrahedron::markInvalid(*this);
+	}
+
+	tetrahedron_t::tetrahedron_t( const tetrahedron_t& other )
+	{
+		memcpy( v, other.v, 4 * sizeof( int ) );
+		memcpy( neighbors, other.neighbors, 4 * sizeof( int ) );
+		memcpy( face, other.face, 3 * 4 * sizeof( int ) );
+	}
+
+	bool tetrahedron_t::isValid() const {
+		for( int i = 0; i < 4; i++ ) {
+			if ( v[ i ] < 0 ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool tetrahedron_t::containsVertex( const int vert ) const {
+		return v[ 0 ] == vert || v[ 1 ] == vert || v[ 2 ] == vert || v[ 3 ] == vert;
+	}
+
+	void tetrahedron_t::getFaceVertices( const int f, int& a, int& b, int& c ) const {
+		assert( f >= 0 && f < 4 );
+		assert( face[f][0] >= 0 && face[f][0] < 4 );
+		assert( face[f][1] >= 0 && face[f][1] < 4 );
+		assert( face[f][2] >= 0 && face[f][2] < 4 );
+		a = v[ face[f][0] ]; 
+		b = v[ face[f][1] ]; 
+		c = v[ face[f][2] ];
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	// Delaunay3D
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	#if LEAVE_CONTAINING_TETRAHEDRON 
 	bool Delaunay3D::tetrahedralize( CoreLib::List< Point >& srcPoints,
 							 		 CoreLib::List< tetrahedron_t >& tetrahedra ) {
 #else
@@ -81,7 +507,7 @@ namespace Delaunay3D {
 		// generate the tetrahedron from the sphere it contains (circumsphere)
 		tetrahedron_t& bigT = tetrahedra.append();
 		containingTetrahedron( center, radius, bigT, pointSet );
-		bigT.fixFaceOrientations( pointSet );
+		Tetrahedron::fixFaceOrientations( bigT, pointSet );
 
 		tetrahedra.setGranularity( 4 * numSrcPoints );
 		for( size_t i = 0; i < numSrcPoints; i++ ) {
@@ -132,7 +558,7 @@ namespace Delaunay3D {
 	The test follows the left-hand rule, clockwise order = up
 	================
 	*/
-	REAL Delaunay3D::orient( const Point& a, const Point& b, const Point& c, const Point& p ) {
+	REAL orient( const Point& a, const Point& b, const Point& c, const Point& p ) {
 		using namespace RenderLib::Math;
 		Matrix4<REAL> M( a.x, a.y, a.z, 1,
 						 b.x, b.y, b.z, 1, 
@@ -172,7 +598,7 @@ namespace Delaunay3D {
 	< 0 outside, = 0 on the sphere
 	================
 	*/
-	REAL Delaunay3D::inSphere( const Point& a, const Point& b, const Point& c, const Point& d, const Point& p ) {
+	REAL inSphere( const Point& a, const Point& b, const Point& c, const Point& d, const Point& p ) {
 		using namespace RenderLib::Math;
 		Matrix5<REAL> M( a.x, a.y, a.z, a.x * a.x + a.y * a.y + a.z * a.z, 1, 
 						 b.x, b.y, b.z, b.x * b.x + b.y * b.y + b.z * b.z, 1, 
@@ -212,12 +638,12 @@ namespace Delaunay3D {
 	Whether the point p is inside the tetrahedron t
 	================
 	*/
-	bool Delaunay3D::inside( const Point& p, const tetrahedron_t& t, const CoreLib::List< Point >& vertices ) {
+	bool inside( const Point& p, const tetrahedron_t& t, const CoreLib::List< Point >& vertices ) {
 		
 		using namespace RenderLib::Math;
 
 		int a, b, c;
-		if ( t.isFlat( vertices ) ) {
+		if ( Tetrahedron::isFlat( t, vertices ) ) {
 			return false;
 		}
 
@@ -243,7 +669,7 @@ namespace Delaunay3D {
 	Whether 4 points are coplanar
 	================
 	*/
-	bool Delaunay3D::coplanar( const Point& a, const Point& b, const Point& c, const Point& d ) {
+	bool coplanar( const Point& a, const Point& b, const Point& c, const Point& d ) {
 		return orient( a, b, c, d ) == 0;
 	}
 
@@ -259,15 +685,15 @@ namespace Delaunay3D {
 	the tetrahedron splitting it into 4 new adjacent tetrahedrons
 	================
 	*/
-	void Delaunay3D::flip14( const unsigned int pointIndex, const unsigned int tetrahedron, 
-							 CoreLib::List< tetrahedron_t >& tetrahedra,
-							 const CoreLib::List< Point >& vertices,
-							 unsigned int resultingTetrahedra[4] ) {
+	void flip14( const unsigned int pointIndex, const unsigned int tetrahedron, 
+		CoreLib::List< tetrahedron_t >& tetrahedra,
+		const CoreLib::List< Point >& vertices,
+		unsigned int resultingTetrahedra[4] ) {
 
 		tetrahedron_t srcT = tetrahedra[ tetrahedron ];
-		assert( srcT.checkFaceOrientations( vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT, vertices ) );
 
-		assert( srcT.checkNeighbors( tetrahedron, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT, tetrahedron, tetrahedra, vertices ) );
 
 #if _DEBUG
 		for( int i = 0; i < 4; i++ ) {
@@ -281,7 +707,7 @@ namespace Delaunay3D {
 
 		const unsigned int iResT1 = tetrahedron; // reuse the source tetrahedron slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
-		resT1.destroy( tetrahedra );
+		Tetrahedron::destroy( resT1, tetrahedra );
 		const unsigned int iResT2 = tetrahedra.size(); 
 		tetrahedron_t& resT2 = tetrahedra.append();
 		const unsigned int iResT3 = tetrahedra.size(); 
@@ -302,55 +728,55 @@ namespace Delaunay3D {
 		// res1
 		srcT.getFaceVertices( 0, resT1.v[0], resT1.v[1], resT1.v[2] );
 		resT1.v[ 3 ] = pointIndex;
-		resT1.fixFaceOrientations( vertices );
-		assert( srcT.sameOrientation( 0, resT1, 0, vertices ) );
+		Tetrahedron::fixFaceOrientations( resT1, vertices );
+		assert( Tetrahedron::sameOrientation( srcT, 0, resT1, 0, vertices ) );
 
 		// res2
 		srcT.getFaceVertices( 1, resT2.v[0], resT2.v[1], resT2.v[2] );
 		resT2.v[ 3 ] = pointIndex;
-		resT2.fixFaceOrientations( vertices );		
-		assert( srcT.sameOrientation( 1, resT2, 0, vertices ) );
+		Tetrahedron::fixFaceOrientations( resT2, vertices );		
+		assert( Tetrahedron::sameOrientation( srcT, 1, resT2, 0, vertices ) );
 	
 		// res3
 		srcT.getFaceVertices( 2, resT3.v[0], resT3.v[1], resT3.v[2] );
 		resT3.v[ 3 ] = pointIndex;
-		resT3.fixFaceOrientations( vertices );
-		assert( srcT.sameOrientation( 2, resT3, 0, vertices ) );
+		Tetrahedron::fixFaceOrientations( resT3, vertices );
+		assert( Tetrahedron::sameOrientation( srcT, 2, resT3, 0, vertices ) );
 		
 		// res4
 		srcT.getFaceVertices( 3, resT4.v[0], resT4.v[1], resT4.v[2] );
 		resT4.v[ 3 ] = pointIndex;
-		resT4.fixFaceOrientations( vertices );
-		assert( srcT.sameOrientation( 3, resT4, 0, vertices ) );
+		Tetrahedron::fixFaceOrientations( resT4, vertices );
+		assert( Tetrahedron::sameOrientation( srcT, 3, resT4, 0, vertices ) );
 
 		// Adjust neighbors 
 
 		resT1.neighbors[ 0 ] = srcT.neighbors[ 0 ];
-		resT1.neighbors[ resT1.sharedFace( resT2, true ) ] = iResT2;
-		resT1.neighbors[ resT1.sharedFace( resT3, true ) ] = iResT3;
-		resT1.neighbors[ resT1.sharedFace( resT4, true ) ] = iResT4;
+		resT1.neighbors[ Tetrahedron::sharedFace( resT1, resT2, true ) ] = iResT2;
+		resT1.neighbors[ Tetrahedron::sharedFace( resT1, resT3, true ) ] = iResT3;
+		resT1.neighbors[ Tetrahedron::sharedFace( resT1, resT4, true ) ] = iResT4;
 
 		resT2.neighbors[ 0 ] = srcT.neighbors[ 1 ];
-		resT2.neighbors[ resT2.sharedFace( resT4, true ) ] = iResT4;
-		resT2.neighbors[ resT2.sharedFace( resT3, true ) ] = iResT3;
-		resT2.neighbors[ resT2.sharedFace( resT1, true ) ] = iResT1;
+		resT2.neighbors[ Tetrahedron::sharedFace( resT2, resT4, true ) ] = iResT4;
+		resT2.neighbors[ Tetrahedron::sharedFace( resT2, resT3, true ) ] = iResT3;
+		resT2.neighbors[ Tetrahedron::sharedFace( resT2, resT1, true ) ] = iResT1;
 
 		resT3.neighbors[ 0 ] = srcT.neighbors[ 2 ];
-		resT3.neighbors[ resT3.sharedFace( resT2, true ) ] = iResT2;
-		resT3.neighbors[ resT3.sharedFace( resT4, true ) ] = iResT4;
-		resT3.neighbors[ resT3.sharedFace( resT1, true ) ] = iResT1;
+		resT3.neighbors[ Tetrahedron::sharedFace( resT3, resT2, true ) ] = iResT2;
+		resT3.neighbors[ Tetrahedron::sharedFace( resT3, resT4, true ) ] = iResT4;
+		resT3.neighbors[ Tetrahedron::sharedFace( resT3, resT1, true ) ] = iResT1;
 
 		resT4.neighbors[ 0 ] = srcT.neighbors[ 3 ];
-		resT4.neighbors[ resT4.sharedFace( resT3, true ) ] = iResT3;
-		resT4.neighbors[ resT4.sharedFace( resT2, true ) ] = iResT2;
-		resT4.neighbors[ resT4.sharedFace( resT1, true ) ] = iResT1;
+		resT4.neighbors[ Tetrahedron::sharedFace( resT4, resT3, true ) ] = iResT3;
+		resT4.neighbors[ Tetrahedron::sharedFace( resT4, resT2, true ) ] = iResT2;
+		resT4.neighbors[ Tetrahedron::sharedFace( resT4, resT1, true ) ] = iResT1;
 		
 		for( int i = 0; i < 4; i++ ) {
 			adjustNeighborVicinity( resultingTetrahedra[ i ], 0, tetrahedra );
 		}
 #if _DEBUG
 		for( int i = 0; i < 4; i++ ) {
-			assert( tetrahedra[ resultingTetrahedra[ i ] ].checkNeighbors( resultingTetrahedra[ i ], tetrahedra, vertices ) );
+			assert( Tetrahedron::checkNeighbors( tetrahedra[ resultingTetrahedra[ i ] ], resultingTetrahedra[ i ], tetrahedra, vertices ) );
 		}
 #endif
 	}
@@ -363,33 +789,33 @@ namespace Delaunay3D {
 	tetrahedra linked by a single edge joining a-e
 	================
 	*/
-	bool Delaunay3D::flip23( const unsigned int tetrahedron1, const unsigned int tetrahedron2, 
-							CoreLib::List< tetrahedron_t >& tetrahedra,
-							const CoreLib::List< Point >& vertices,
-							unsigned int resultingTetrahedra[3] ) {
+	bool flip23( const unsigned int tetrahedron1, const unsigned int tetrahedron2, 
+				 CoreLib::List< tetrahedron_t >& tetrahedra,
+				 const CoreLib::List< Point >& vertices,
+				 unsigned int resultingTetrahedra[3] ) {
 
 		tetrahedron_t srcT1 = tetrahedra[ tetrahedron1 ];
 		tetrahedron_t srcT2 = tetrahedra[ tetrahedron2 ];
 
-		assert( srcT1.checkFaceOrientations( vertices ) );
-		assert( srcT2.checkFaceOrientations( vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT1, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT2, vertices ) );
 
-		assert( srcT1.checkNeighbors( tetrahedron1, tetrahedra, vertices ) );
-		assert( srcT2.checkNeighbors( tetrahedron2, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT1, tetrahedron1, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT2, tetrahedron2, tetrahedra, vertices ) );
 
-		assert( srcT1.adjacentTo( srcT2 ) );
+		assert( Tetrahedron::adjacentTo( srcT1, srcT2 ) );
 				
 		// The resulting 3 tetrahedra will all be adjacent to an edge linking the
 		// non-shared vertices of the 2 source tetrahedra
 		
-		const int sharedFaceT1 = srcT1.sharedFace( srcT2, true ); // the shared face's index according to T1
-		const int sharedFaceT2 = srcT2.sharedFace( srcT1, true ); // the shared face's index according to T2
-																// note that the shared face is the same geometrically
-																// but we're referring to it by its index in 
-																// each tetrahedron's particular array
+		const int sharedFaceT1 = Tetrahedron::sharedFace( srcT1, srcT2, true ); // the shared face's index according to T1
+		const int sharedFaceT2 = Tetrahedron::sharedFace( srcT2, srcT1, true ); // the shared face's index according to T2
+																				// note that the shared face is the same geometrically
+																				// but we're referring to it by its index in 
+																				// each tetrahedron's particular array
 
-		const int a = srcT1.getVertexOutsideFace( sharedFaceT1 );
-		const int e = srcT2.getVertexOutsideFace( sharedFaceT2 );
+		const int a = Tetrahedron::getVertexOutsideFace( srcT1, sharedFaceT1 );
+		const int e = Tetrahedron::getVertexOutsideFace( srcT2, sharedFaceT2 );
 		
 		int b,c,d;
 		srcT1.getFaceVertices( sharedFaceT1, b, c, d );
@@ -408,10 +834,11 @@ namespace Delaunay3D {
 		// by ABC (clockwise order). Therefore since we've obtained our plane points from the tetrahedron
 		// face, which points outwards, we'll need to invert them to make the 4th point be above the plane.
 
-		assert( srcT1.isFlat( vertices ) || inSphere(	vertices[ b ], vertices[ d ], vertices[ c ], // note inverted d,c
-														vertices[ a ], // srcT1 4th vertex, above the inversed sharedFaceT1
-														vertices[ e ]  // srcT2 4th vertex, which should be behind our tested plane
-													 ) >= 0 
+		assert( Tetrahedron::isFlat( srcT1, vertices ) || 
+				inSphere(	vertices[ b ], vertices[ d ], vertices[ c ], // note inverted d,c
+							vertices[ a ], // srcT1 4th vertex, above the inversed sharedFaceT1
+							vertices[ e ]  // srcT2 4th vertex, which should be behind our tested plane
+						 ) >= 0 
 				); 
 
 		// flip 23 is only possible if the edge a-e crosses the shared face
@@ -428,10 +855,10 @@ namespace Delaunay3D {
 
 		const unsigned int iResT1 = tetrahedron1; // reuse the source tetrahedron1 slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
-		resT1.destroy( tetrahedra );
+		Tetrahedron::destroy( resT1, tetrahedra );
 		const unsigned int iResT2 = tetrahedron2; // reuse the source tetrahedron2 slot
 		tetrahedron_t& resT2 = tetrahedra[ iResT2 ];
-		resT2.destroy( tetrahedra );
+		Tetrahedron::destroy( resT2, tetrahedra );
 		const unsigned int iResT3 = tetrahedra.size(); 
 		tetrahedron_t& resT3 = tetrahedra.append();
 
@@ -450,21 +877,21 @@ namespace Delaunay3D {
 		resT1.v[ 1 ] = d;
 		resT1.v[ 2 ] = a;
 		resT1.v[ 3 ] = e;
-		resT1.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT1, vertices );
 
 		{ // adjust boundary faces' neighborhood
 			
 			// get the external faces in the new tetrahedron...
-			const int bFace1 = resT1.getFaceFromVertices( a, b, d );
-			const int bFace2 = resT1.getFaceFromVertices( b, e, d );
+			const int bFace1 = Tetrahedron::getFaceFromVertices( resT1, a, b, d );
+			const int bFace2 = Tetrahedron::getFaceFromVertices( resT1, b, e, d );
 
 			// ...and the corresponding faces in the source tetrahedra
-			const int bFace1Src = srcT1.getFaceFromVertices( a, b, d );
-			const int bFace2Src = srcT2.getFaceFromVertices( b, e, d );
+			const int bFace1Src = Tetrahedron::getFaceFromVertices( srcT1, a, b, d );
+			const int bFace2Src = Tetrahedron::getFaceFromVertices( srcT2, b, e, d );
 
 			assert( bFace1 >= 0 && bFace2 >= 0 && bFace1Src >= 0 && bFace2Src >= 0 );
-			assert( resT1.isFlat( vertices ) || srcT1.sameOrientation( bFace1Src, resT1, bFace1, vertices ) );
-			assert( resT1.isFlat( vertices ) || srcT2.sameOrientation( bFace2Src, resT1, bFace2, vertices ) );
+			assert( Tetrahedron::isFlat( resT1, vertices ) || Tetrahedron::sameOrientation( srcT1, bFace1Src, resT1, bFace1, vertices ) );
+			assert( Tetrahedron::isFlat( resT1, vertices ) || Tetrahedron::sameOrientation( srcT2, bFace2Src, resT1, bFace2, vertices ) );
 
 			// copy the neighbors
 			resT1.neighbors[ bFace1 ] = srcT1.neighbors[ bFace1Src ];
@@ -481,22 +908,22 @@ namespace Delaunay3D {
 		resT2.v[ 1 ] = c;
 		resT2.v[ 2 ] = a;
 		resT2.v[ 3 ] = e;
-		resT2.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT2, vertices );
 
 
 		{ // adjust boundary faces' neighborhood
 
 			// get the external faces in the new tetrahedron...
-			const int bFace1 = resT2.getFaceFromVertices( c, a, d );
-			const int bFace2 = resT2.getFaceFromVertices( d, e, c );
+			const int bFace1 = Tetrahedron::getFaceFromVertices( resT2, c, a, d );
+			const int bFace2 = Tetrahedron::getFaceFromVertices( resT2, d, e, c );
 
 			// ...and the corresponding faces in the source tetrahedra
-			const int bFace1Src = srcT1.getFaceFromVertices( c, a, d );
-			const int bFace2Src = srcT2.getFaceFromVertices( d, e, c );
+			const int bFace1Src = Tetrahedron::getFaceFromVertices( srcT1, c, a, d );
+			const int bFace2Src = Tetrahedron::getFaceFromVertices( srcT2, d, e, c );
 
 			assert( bFace1 >= 0 && bFace2 >= 0 && bFace1Src >= 0 && bFace2Src >= 0 );
-			assert( resT2.isFlat( vertices ) || srcT1.sameOrientation( bFace1Src, resT2, bFace1, vertices ) );
-			assert( resT2.isFlat( vertices ) || srcT2.sameOrientation( bFace2Src, resT2, bFace2, vertices ) );
+			assert( Tetrahedron::isFlat( resT2, vertices ) || Tetrahedron::sameOrientation( srcT1, bFace1Src, resT2, bFace1, vertices ) );
+			assert( Tetrahedron::isFlat( resT2, vertices ) || Tetrahedron::sameOrientation( srcT2, bFace2Src, resT2, bFace2, vertices ) );
 
 			// copy the neighbors
 			resT2.neighbors[ bFace1 ] = srcT1.neighbors[ bFace1Src ];
@@ -513,21 +940,21 @@ namespace Delaunay3D {
 		resT3.v[ 1 ] = b;
 		resT3.v[ 2 ] = a;
 		resT3.v[ 3 ] = e;
-		resT3.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT3, vertices );
 
 		{ // adjust boundary faces' neighborhood
 
 			// get the external faces in the new tetrahedron...
-			const int bFace1 = resT3.getFaceFromVertices( b, a, c );
-			const int bFace2 = resT3.getFaceFromVertices( c, e, b );
+			const int bFace1 = Tetrahedron::getFaceFromVertices( resT3, b, a, c );
+			const int bFace2 = Tetrahedron::getFaceFromVertices( resT3, c, e, b );
 
 			// ...and the corresponding faces in the source tetrahedra
-			const int bFace1Src = srcT1.getFaceFromVertices( b, a, c );
-			const int bFace2Src = srcT2.getFaceFromVertices( c, e, b );
+			const int bFace1Src = Tetrahedron::getFaceFromVertices( srcT1, b, a, c );
+			const int bFace2Src = Tetrahedron::getFaceFromVertices( srcT2, c, e, b );
 
 			assert( bFace1 >= 0 && bFace2 >= 0 && bFace1Src >= 0 && bFace2Src >= 0 );
-			assert( resT3.isFlat( vertices ) || srcT1.sameOrientation( bFace1Src, resT3, bFace1, vertices ) );
-			assert( resT3.isFlat( vertices ) || srcT2.sameOrientation( bFace2Src, resT3, bFace2, vertices ) );
+			assert( Tetrahedron::isFlat( resT3, vertices ) || Tetrahedron::sameOrientation( srcT1, bFace1Src, resT3, bFace1, vertices ) );
+			assert( Tetrahedron::isFlat( resT3, vertices ) || Tetrahedron::sameOrientation( srcT2, bFace2Src, resT3, bFace2, vertices ) );
 
 			// copy the neighbors
 			resT3.neighbors[ bFace1 ] = srcT1.neighbors[ bFace1Src ];
@@ -539,17 +966,17 @@ namespace Delaunay3D {
 		}
 
 		// adjust internal neighborhood
-		resT1.neighbors[ resT1.sharedFace( resT2, true ) ] = iResT2;
-		resT1.neighbors[ resT1.sharedFace( resT3, true ) ] = iResT3;
-		resT2.neighbors[ resT2.sharedFace( resT1, true ) ] = iResT1;
-		resT2.neighbors[ resT2.sharedFace( resT3, true ) ] = iResT3;
-		resT3.neighbors[ resT3.sharedFace( resT1, true ) ] = iResT1;
-		resT3.neighbors[ resT3.sharedFace( resT2, true ) ] = iResT2;
+		resT1.neighbors[ Tetrahedron::sharedFace( resT1, resT2, true ) ] = iResT2;
+		resT1.neighbors[ Tetrahedron::sharedFace( resT1, resT3, true ) ] = iResT3;
+		resT2.neighbors[ Tetrahedron::sharedFace( resT2, resT1, true ) ] = iResT1;
+		resT2.neighbors[ Tetrahedron::sharedFace( resT2, resT3, true ) ] = iResT3;
+		resT3.neighbors[ Tetrahedron::sharedFace( resT3, resT1, true ) ] = iResT1;
+		resT3.neighbors[ Tetrahedron::sharedFace( resT3, resT2, true ) ] = iResT2;
 
 		
 #if _DEBUG
 		for( int i = 0; i < 3; i++ ) {
-			assert( tetrahedra[ resultingTetrahedra[ i ] ].checkNeighbors( resultingTetrahedra[ i ], tetrahedra, vertices ) );
+			assert( Tetrahedron::checkNeighbors( tetrahedra[ resultingTetrahedra[ i ] ], resultingTetrahedra[ i ], tetrahedra, vertices ) );
 		}
 #endif
 		return true;
@@ -566,10 +993,10 @@ namespace Delaunay3D {
 	invalid.
 	================
 	*/
-	void Delaunay3D::flip32( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, 
-							CoreLib::List< tetrahedron_t >& tetrahedra,
-							const CoreLib::List< Point >& vertices,
-							unsigned int resultingTetrahedra[2] ) {
+	void flip32( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, 
+				 CoreLib::List< tetrahedron_t >& tetrahedra,
+				 const CoreLib::List< Point >& vertices,
+				 unsigned int resultingTetrahedra[2] ) {
 
 		using namespace RenderLib::Math;
 
@@ -577,20 +1004,20 @@ namespace Delaunay3D {
 		tetrahedron_t srcT2 = tetrahedra[ tetrahedron2 ];
 		tetrahedron_t srcT3 = tetrahedra[ tetrahedron3 ];
 
-		assert( srcT1.checkFaceOrientations( vertices ) );
-		assert( srcT2.checkFaceOrientations( vertices ) );
-		assert( srcT3.checkFaceOrientations( vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT1, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT2, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT3, vertices ) );
 
-		assert( srcT1.checkNeighbors( tetrahedron1, tetrahedra, vertices ) );
-		assert( srcT2.checkNeighbors( tetrahedron2, tetrahedra, vertices ) );
-		assert( srcT3.checkNeighbors( tetrahedron3, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT1, tetrahedron1, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT2, tetrahedron2, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT3, tetrahedron3, tetrahedra, vertices ) );
 
 		const unsigned int iResT1 = tetrahedron1; // reuse the source tetrahedron1 slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
-		resT1.destroy( tetrahedra );
+		Tetrahedron::destroy( resT1, tetrahedra );
 		const unsigned int iResT2 = tetrahedron2; // reuse the source tetrahedron2 slot
 		tetrahedron_t& resT2 = tetrahedra[ iResT2 ];
-		resT2.destroy( tetrahedra );
+		Tetrahedron::destroy( resT2, tetrahedra );
 
 		assert( !resT1.isValid() );
 		assert( !resT2.isValid() );
@@ -604,9 +1031,9 @@ namespace Delaunay3D {
 		int a = -1, b = -1, c = -1, d = -1, p = -1;
 
 		{		
-			const int sharedFace12 = srcT1.sharedFace( srcT2, true );
-			const int sharedFace13 = srcT1.sharedFace( srcT3, true );
-			const int sharedFace23 = srcT2.sharedFace( srcT3, true );
+			const int sharedFace12 = Tetrahedron::sharedFace( srcT1, srcT2, true );
+			const int sharedFace13 = Tetrahedron::sharedFace( srcT1, srcT3, true );
+			const int sharedFace23 = Tetrahedron::sharedFace( srcT2, srcT3, true );
 			assert( sharedFace12 >= 0 && sharedFace13 >= 0 && sharedFace23 >= 0 );
 
 			int sharedFaceVertices[ 9 ];
@@ -677,7 +1104,7 @@ namespace Delaunay3D {
 		assert( a >= 0 && b >= 0 && c >= 0 && d >= 0 && p >= 0 );
 
 		// destroy the unused tetrahedron
-		tetrahedra[ tetrahedron3 ].destroy( tetrahedra );
+		Tetrahedron::destroy( tetrahedra[ tetrahedron3 ], tetrahedra );
 
 		// Result 1
 
@@ -685,27 +1112,27 @@ namespace Delaunay3D {
 		resT1.v[ 1 ] = c;
 		resT1.v[ 2 ] = b;
 		resT1.v[ 3 ] = d;
-		resT1.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT1, vertices );
 
 		{ // sort out neighbors
-			const int sf1 = srcT1.sharedFace( resT1, false );
-			const int sf2 = srcT2.sharedFace( resT1, false );
-			const int sf3 = srcT3.sharedFace( resT1, false );
-			const int sf4 = resT1.getFaceFromVertices( a, c, b );
+			const int sf1 = Tetrahedron::sharedFace( srcT1, resT1, false );
+			const int sf2 = Tetrahedron::sharedFace( srcT2, resT1, false );
+			const int sf3 = Tetrahedron::sharedFace( srcT3, resT1, false );
+			const int sf4 = Tetrahedron::getFaceFromVertices( resT1, a, c, b );
 			assert( sf1 >= 0 && sf2 >= 0 && sf3 >= 0 && sf4 >= 0 );
 
 			int v[3];
 
 			srcT1.getFaceVertices( sf1, v[0], v[1], v[2] );
-			const int r1sf = resT1.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r1sf = Tetrahedron::getFaceFromVertices( resT1, v[0], v[1], v[2] );
 			resT1.neighbors[ r1sf ] = srcT1.neighbors[ sf1 ];
 
 			srcT2.getFaceVertices( sf2, v[0], v[1], v[2] );
-			const int r2sf = resT1.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r2sf = Tetrahedron::getFaceFromVertices( resT1, v[0], v[1], v[2] );
 			resT1.neighbors[ r2sf ] = srcT2.neighbors[ sf2 ];
 
 			srcT3.getFaceVertices( sf3, v[0], v[1], v[2] );
-			const int r3sf = resT1.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r3sf = Tetrahedron::getFaceFromVertices( resT1, v[0], v[1], v[2] );
 			resT1.neighbors[ r3sf ] = srcT3.neighbors[ sf3 ];
 
 			adjustNeighborVicinity( iResT1, r1sf, tetrahedra );
@@ -721,27 +1148,27 @@ namespace Delaunay3D {
 		resT2.v[ 1 ] = b;
 		resT2.v[ 2 ] = c;
 		resT2.v[ 3 ] = p;
-		resT2.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT2, vertices );
 
 		{ // sort out neighbors
-			const int sf1 = srcT1.sharedFace( resT2, false );
-			const int sf2 = srcT2.sharedFace( resT2, false );
-			const int sf3 = srcT3.sharedFace( resT2, false );
-			const int sf4 = resT2.getFaceFromVertices( a, b, c );
+			const int sf1 = Tetrahedron::sharedFace( srcT1, resT2, false );
+			const int sf2 = Tetrahedron::sharedFace( srcT2, resT2, false );
+			const int sf3 = Tetrahedron::sharedFace( srcT3, resT2, false );
+			const int sf4 = Tetrahedron::getFaceFromVertices( resT2, a, b, c );
 			assert( sf1 >= 0 && sf2 >= 0 && sf3 >= 0 && sf4 >= 0 );
 
 			int v[3];
 
 			srcT1.getFaceVertices( sf1, v[0], v[1], v[2] );
-			const int r1sf = resT2.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r1sf = Tetrahedron::getFaceFromVertices( resT2 ,v[0], v[1], v[2] );
 			resT2.neighbors[ r1sf ] = srcT1.neighbors[ sf1 ];
 
 			srcT2.getFaceVertices( sf2, v[0], v[1], v[2] );
-			const int r2sf = resT2.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r2sf = Tetrahedron::getFaceFromVertices( resT2, v[0], v[1], v[2] );
 			resT2.neighbors[ r2sf ] = srcT2.neighbors[ sf2 ];
 
 			srcT3.getFaceVertices( sf3, v[0], v[1], v[2] );
-			const int r3sf = resT2.getFaceFromVertices( v[0], v[1], v[2] );
+			const int r3sf = Tetrahedron::getFaceFromVertices( resT2, v[0], v[1], v[2] );
 			resT2.neighbors[ r3sf ] = srcT3.neighbors[ sf3 ];
 
 			adjustNeighborVicinity( iResT2, r1sf, tetrahedra );
@@ -753,7 +1180,7 @@ namespace Delaunay3D {
 		
 #if _DEBUG
 		for( int i = 0; i < 2; i++ ) {
-			assert( tetrahedra[ resultingTetrahedra[ i ] ].checkNeighbors( resultingTetrahedra[ i ], tetrahedra, vertices ) );
+			assert( Tetrahedron::checkNeighbors( tetrahedra[ resultingTetrahedra[ i ] ], resultingTetrahedra[ i ], tetrahedra, vertices ) );
 		}
 #endif
 	}
@@ -766,10 +1193,10 @@ namespace Delaunay3D {
 	into 4 adjacent tetrahedra [abce][abed][bcef][bdef] sharing a common edge b-e
 	================
 	*/
-	void Delaunay3D::flip44( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, const unsigned int tetrahedron4,
-							CoreLib::List< tetrahedron_t >& tetrahedra,
-							const CoreLib::List< Point >& vertices,
-							unsigned int resultingTetrahedra[4] ) {
+	void flip44( const unsigned int tetrahedron1, const unsigned int tetrahedron2, const unsigned int tetrahedron3, const unsigned int tetrahedron4,
+				 CoreLib::List< tetrahedron_t >& tetrahedra,
+				 const CoreLib::List< Point >& vertices,
+				 unsigned int resultingTetrahedra[4] ) {
 
 		
 		/* The order of the input tetrahedra is:
@@ -793,33 +1220,33 @@ namespace Delaunay3D {
 		tetrahedron_t srcT3 = tetrahedra[ tetrahedron3 ];
 		tetrahedron_t srcT4 = tetrahedra[ tetrahedron4 ];
 
-		assert( srcT1.adjacentTo( srcT2 ) );
-		assert( srcT1.adjacentTo( srcT3 ) );
-		assert( srcT2.adjacentTo( srcT4 ) );
-		assert( srcT3.adjacentTo( srcT4 ) );
+		assert( Tetrahedron::adjacentTo( srcT1, srcT2 ) );
+		assert( Tetrahedron::adjacentTo( srcT1, srcT3 ) );
+		assert( Tetrahedron::adjacentTo( srcT2, srcT4 ) );
+		assert( Tetrahedron::adjacentTo( srcT3, srcT4 ) );
 
-		assert( srcT1.checkFaceOrientations( vertices ) );
-		assert( srcT2.checkFaceOrientations( vertices ) );
-		assert( srcT3.checkFaceOrientations( vertices ) );
-		assert( srcT4.checkFaceOrientations( vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT1, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT2, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT3, vertices ) );
+		assert( Tetrahedron::checkFaceOrientations( srcT4, vertices ) );
 
-		assert( srcT1.checkNeighbors( tetrahedron1, tetrahedra, vertices ) );
-		assert( srcT2.checkNeighbors( tetrahedron2, tetrahedra, vertices ) );
-		assert( srcT3.checkNeighbors( tetrahedron3, tetrahedra, vertices ) );
-		assert( srcT4.checkNeighbors( tetrahedron4, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT1, tetrahedron1, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT2, tetrahedron2, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT3, tetrahedron3, tetrahedra, vertices ) );
+		assert( Tetrahedron::checkNeighbors( srcT4, tetrahedron4, tetrahedra, vertices ) );
 
 		const int iResT1 = tetrahedron1; // reuse the source tetrahedron1 slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
-		resT1.destroy( tetrahedra );
+		Tetrahedron::destroy( resT1, tetrahedra );
 		const int iResT2 = tetrahedron2; // reuse the source tetrahedron2 slot
 		tetrahedron_t& resT2 = tetrahedra[ iResT2 ];
-		resT2.destroy( tetrahedra );
+		Tetrahedron::destroy( resT2, tetrahedra );
 		const int iResT3 = tetrahedron3; // reuse the source tetrahedron3 slot
 		tetrahedron_t& resT3 = tetrahedra[ iResT3 ];
-		resT3.destroy( tetrahedra );
+		Tetrahedron::destroy( resT3, tetrahedra );
 		const int iResT4 = tetrahedron4; // reuse the source tetrahedron4 slot
 		tetrahedron_t& resT4 = tetrahedra[ iResT4 ];
-		resT4.destroy( tetrahedra );
+		Tetrahedron::destroy( resT4, tetrahedra );
 
 		assert( !resT1.isValid() );
 		assert( !resT2.isValid() );
@@ -840,21 +1267,21 @@ namespace Delaunay3D {
 		int a, b, c, d, e, f;
 		int sf;
 
-		sf = srcT1.sharedFace( srcT2, true ); // [bcd]
+		sf = Tetrahedron::sharedFace( srcT1, srcT2, true ); // [bcd]
 		assert( sf >= 0 );
-		a = srcT1.getVertexOutsideFace( sf );
+		a = Tetrahedron::getVertexOutsideFace( srcT1, sf );
 		
-		sf = srcT2.sharedFace( srcT1, true ); // [bcd]
+		sf = Tetrahedron::sharedFace( srcT2, srcT1, true ); // [bcd]
 		assert( sf >= 0 );
-		f = srcT2.getVertexOutsideFace( sf );
+		f = Tetrahedron::getVertexOutsideFace( srcT2, sf );
 
-		sf = srcT1.sharedFace( srcT3, true ); // [acd]
+		sf = Tetrahedron::sharedFace( srcT1, srcT3, true ); // [acd]
 		assert( sf >= 0 );
-		b = srcT1.getVertexOutsideFace( sf );
+		b = Tetrahedron::getVertexOutsideFace( srcT1, sf );
 
-		sf = srcT3.sharedFace( srcT1, true ); // [acd]
+		sf = Tetrahedron::sharedFace( srcT3, srcT1, true ); // [acd]
 		assert( sf >= 0 );
-		e = srcT3.getVertexOutsideFace( sf );
+		e = Tetrahedron::getVertexOutsideFace( srcT3, sf );
 
 		// The only remaining vertices are c and d
 		// Since we know they belong to each one of
@@ -865,7 +1292,7 @@ namespace Delaunay3D {
 		// srcT1 [abcd] --> we have a, b already
 		c = -1; d = -1;
 		for( int i = 0; i < 4 && c < 0 && d < 0; i++ ) {
-			if ( srcT1.getVertexOutsideFace( i ) == b ) {
+			if ( Tetrahedron::getVertexOutsideFace( srcT1, i ) == b ) {
 				int v[3];
 				srcT1.getFaceVertices( i, v[0], v[1], v[2] );
 				for( int j = 0; j < 3; j++ ) {
@@ -890,39 +1317,15 @@ namespace Delaunay3D {
 			if ( resT4.v[ i ] == c ) resT4.v[ i ] = b;
 		}
 
-		//resT1.v[0] = a;
-		//resT1.v[1] = b;
-		//resT1.v[2] = e;
-		//resT1.v[3] = d;
-		//resT1.FixFaceOrientations( vertices );
-
-		//resT2.v[0] = f;
-		//resT2.v[1] = d;
-		//resT2.v[2] = e;
-		//resT2.v[3] = b;
-		//resT2.FixFaceOrientations( vertices );
-
-		//resT3.v[0] = a;
-		//resT3.v[1] = c;
-		//resT3.v[2] = b;
-		//resT3.v[3] = e;
-		//resT3.FixFaceOrientations( vertices );
-
-		//resT4.v[0] = b;
-		//resT4.v[1] = c;
-		//resT4.v[2] = e;
-		//resT4.v[3] = f;
-		//resT4.FixFaceOrientations( vertices );
-
 		// Result 1
 		
 		{ // sort out neighbors
 
 			// get the external faces in the new tetrahedron...
-			const int sf1 = srcT1.getFaceFromVertices( a, b, c );
-			const int sf3 = srcT3.getFaceFromVertices( a, c, e );
-			const int rf1 = resT1.getFaceFromVertices( a, b, c );
-			const int rf3 = resT1.getFaceFromVertices( a, c, e );
+			const int sf1 = Tetrahedron::getFaceFromVertices( srcT1, a, b, c );
+			const int sf3 = Tetrahedron::getFaceFromVertices( srcT3, a, c, e );
+			const int rf1 = Tetrahedron::getFaceFromVertices( resT1, a, b, c );
+			const int rf3 = Tetrahedron::getFaceFromVertices( resT1, a, c, e );
 			assert( sf1 >= 0 && sf3 >= 0 && rf1 >= 0 && rf3 >= 0 );
 
 			resT1.neighbors[ rf1 ] = srcT1.neighbors[ sf1 ];
@@ -935,10 +1338,10 @@ namespace Delaunay3D {
 		// Result 2
 
 		{ // sort out neighbors
-			const int sf2 = srcT2.getFaceFromVertices( b, c, f );
-			const int sf4 = srcT4.getFaceFromVertices( c, e, f );
-			const int rf2 = resT2.getFaceFromVertices( b, c, f );
-			const int rf4 = resT2.getFaceFromVertices( c, e, f );
+			const int sf2 = Tetrahedron::getFaceFromVertices( srcT2, b, c, f );
+			const int sf4 = Tetrahedron::getFaceFromVertices( srcT4, c, e, f );
+			const int rf2 = Tetrahedron::getFaceFromVertices( resT2, b, c, f );
+			const int rf4 = Tetrahedron::getFaceFromVertices( resT2, c, e, f );
 			assert( sf2 >= 0 && sf4 >= 0 && rf2 >= 0 && rf4 >= 0 );
 
 			resT2.neighbors[ rf2 ] = srcT2.neighbors[ sf2 ];
@@ -952,10 +1355,10 @@ namespace Delaunay3D {
 
 
 		{ // sort out neighbors
-			const int sf1 = srcT1.getFaceFromVertices( a, b, d );
-			const int sf3 = srcT3.getFaceFromVertices( a, d, e );
-			const int rf1 = resT3.getFaceFromVertices( a, b, d );
-			const int rf3 = resT3.getFaceFromVertices( a, d, e );
+			const int sf1 = Tetrahedron::getFaceFromVertices( srcT1, a, b, d );
+			const int sf3 = Tetrahedron::getFaceFromVertices( srcT3, a, d, e );
+			const int rf1 = Tetrahedron::getFaceFromVertices( resT3, a, b, d );
+			const int rf3 = Tetrahedron::getFaceFromVertices( resT3, a, d, e );
 			assert( sf1 >= 0 && sf3 >= 0 && rf1 >= 0 && rf3 >= 0 );
 
 			resT3.neighbors[ rf1 ] = srcT1.neighbors[ sf1 ];
@@ -970,10 +1373,10 @@ namespace Delaunay3D {
 
 		{ // sort out neighbors
 			
-			const int sf2 = srcT2.getFaceFromVertices( b, d, f );
-			const int sf4 = srcT4.getFaceFromVertices( d, e, f );
-			const int rf2 = resT4.getFaceFromVertices( b, d, f );
-			const int rf4 = resT4.getFaceFromVertices( d, e, f );
+			const int sf2 = Tetrahedron::getFaceFromVertices( srcT2, b, d, f );
+			const int sf4 = Tetrahedron::getFaceFromVertices( srcT4, d, e, f );
+			const int rf2 = Tetrahedron::getFaceFromVertices( resT4, b, d, f );
+			const int rf4 = Tetrahedron::getFaceFromVertices( resT4, d, e, f );
 
 			assert( sf2 >= 0 && sf4 >= 0 && rf2 >= 0 && rf4 >= 0 );
 
@@ -986,25 +1389,25 @@ namespace Delaunay3D {
 
 		{
 			// Fix adjacency between resulting tetrahedra
-			resT1.neighbors[ resT1.getFaceFromVertices( b, c, e ) ] = iResT2;
-			resT1.neighbors[ resT1.getFaceFromVertices( a, b, e ) ] = iResT3;
-			resT2.neighbors[ resT2.getFaceFromVertices( b, c, e ) ] = iResT1;
-			resT2.neighbors[ resT2.getFaceFromVertices( b, e, f ) ] = iResT4;
-			resT3.neighbors[ resT3.getFaceFromVertices( a, b, e ) ] = iResT1;
-			resT3.neighbors[ resT3.getFaceFromVertices( b, d, e ) ] = iResT4;
-			resT4.neighbors[ resT4.getFaceFromVertices( b, d, e ) ] = iResT3;
-			resT4.neighbors[ resT4.getFaceFromVertices( b, e, f ) ] = iResT2;
+			resT1.neighbors[ Tetrahedron::getFaceFromVertices( resT1, b, c, e ) ] = iResT2;
+			resT1.neighbors[ Tetrahedron::getFaceFromVertices( resT1, a, b, e ) ] = iResT3;
+			resT2.neighbors[ Tetrahedron::getFaceFromVertices( resT2, b, c, e ) ] = iResT1;
+			resT2.neighbors[ Tetrahedron::getFaceFromVertices( resT2, b, e, f ) ] = iResT4;
+			resT3.neighbors[ Tetrahedron::getFaceFromVertices( resT3, a, b, e ) ] = iResT1;
+			resT3.neighbors[ Tetrahedron::getFaceFromVertices( resT3, b, d, e ) ] = iResT4;
+			resT4.neighbors[ Tetrahedron::getFaceFromVertices( resT4, b, d, e ) ] = iResT3;
+			resT4.neighbors[ Tetrahedron::getFaceFromVertices( resT4, b, e, f ) ] = iResT2;
 		}
 
 #if _DEBUG
 		for( int i = 0; i < 4; i++ ) {
-			assert( tetrahedra[ resultingTetrahedra[ i ] ].checkNeighbors( resultingTetrahedra[ i ], tetrahedra, vertices ) );	
+			assert( Tetrahedron::checkNeighbors( tetrahedra[ resultingTetrahedra[ i ] ], resultingTetrahedra[ i ], tetrahedra, vertices ) );	
 		}
 #endif
-		resT1.fixFaceOrientations( vertices );
-		resT2.fixFaceOrientations( vertices );
-		resT3.fixFaceOrientations( vertices );
-		resT4.fixFaceOrientations( vertices );
+		Tetrahedron::fixFaceOrientations( resT1, vertices );
+		Tetrahedron::fixFaceOrientations( resT2, vertices );
+		Tetrahedron::fixFaceOrientations( resT3, vertices );
+		Tetrahedron::fixFaceOrientations( resT4, vertices );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1021,9 +1424,9 @@ namespace Delaunay3D {
 	temp vertices array obtained by ::TempVertices();
 	================
 	*/
-	void Delaunay3D::containingTetrahedron( const RenderLib::Math::Point3f& center, const float radius, // circumsphere
-											tetrahedron_t& t,
-											CoreLib::List< Point >& pointSet ) {
+	void containingTetrahedron( const RenderLib::Math::Point3f& center, const float radius, // circumsphere
+								tetrahedron_t& t,
+								CoreLib::List< Point >& pointSet ) {
 
 		// from the Wikipedia: 
 		// For a regular tetrahedron of edge length L: radius = L / sqrt( 24 )
@@ -1087,15 +1490,15 @@ namespace Delaunay3D {
 	that face points to the given tetrahedron.
 	================
 	*/
-	void Delaunay3D::adjustNeighborVicinity( const int iT, const int f, CoreLib::List< tetrahedron_t >& tetrahedra ) {
+	void adjustNeighborVicinity( const int iT, const int f, CoreLib::List< tetrahedron_t >& tetrahedra ) {
 		const tetrahedron_t& T = tetrahedra[ iT ];
-		assert( T.isValid() && "T.IsValid()" );
+		assert( T.isValid() && "IsValid(T)" );
 		if( T.neighbors[ f ] >= 0 ) { // adjust our neighbor's vicinity
 			tetrahedron_t& n = tetrahedra[ T.neighbors[ f ] ];
 			if ( n.isValid() ) {
 				int v[3];
 				T.getFaceVertices( f, v[0], v[1], v[2] );
-				const int sharedFace = n.getFaceFromVertices( v[0], v[2], v[1] ); // reverse face
+				const int sharedFace = Tetrahedron::getFaceFromVertices( n, v[0], v[2], v[1] ); // reverse face
 				assert( sharedFace >= 0 && "sharedFace >= 0" );
 				n.neighbors[ sharedFace ] = iT;
 			}
@@ -1110,9 +1513,9 @@ namespace Delaunay3D {
 	It retrieves the result by searching from a given sourceT tetrahedron index. 
 	================
 	*/
-	int Delaunay3D::walk( const Point& p, const int sourceT, 
-						  const CoreLib::List< Point >& vertices,
-						  const CoreLib::List< tetrahedron_t >& tetrahedra ) {
+	int walk( const Point& p, const int sourceT, 
+			  const CoreLib::List< Point >& vertices,
+			  const CoreLib::List< tetrahedron_t >& tetrahedra ) {
 		if ( sourceT < 0 || (size_t)sourceT >= tetrahedra.size() ) {
 			assert( false );
 			return -1;
@@ -1194,26 +1597,26 @@ namespace Delaunay3D {
 	================
 	*/
 	
-	void Delaunay3D::flip( const int iT, const int iTa, const int p,
-						   const CoreLib::List< Point >& vertices, 
-						   CoreLib::List< tetrahedron_t >& tetrahedra,
-						   std::stack< unsigned int >& needTesting ) {
+	void flip( const int iT, const int iTa, const int p,
+			   const CoreLib::List< Point >& vertices, 
+			   CoreLib::List< tetrahedron_t >& tetrahedra,
+			   std::stack< unsigned int >& needTesting ) {
 		
 		using namespace RenderLib::Geometry;
 
 		tetrahedron_t& T = tetrahedra[ iT ];
 		tetrahedron_t& Ta = tetrahedra[ iTa ];
 
-		assert( T.adjacentTo( Ta ) );
+		assert( Tetrahedron::adjacentTo( T, Ta ) );
 		assert( T.containsVertex( p ) );
 
-		const int TSharedFace = T.sharedFace( Ta, true );
+		const int TSharedFace = Tetrahedron::sharedFace( T, Ta, true );
 		assert( TSharedFace >= 0 );
 
 		int sharedVertices[3];
 		T.getFaceVertices( TSharedFace, sharedVertices[ 0 ], sharedVertices[ 1 ], sharedVertices[ 2 ] );
 
-		const int d = Ta.getVertexOutsideFace( Ta.sharedFace( T, true ) );
+		const int d = Tetrahedron::getVertexOutsideFace( Ta, Tetrahedron::sharedFace( Ta, T, true ) );
 		assert( d >= 0 );
 
 		int Case = -1;
@@ -1227,7 +1630,7 @@ namespace Delaunay3D {
 		if( coplanar( pA, pB, pC, pP ) ) {
 			// case 4 = a, b, c, p are coplanar. T is flat.
 			Case = 4;
-			assert( T.isFlat( vertices ) );
+			assert( Tetrahedron::isFlat( T, vertices ) );
 		} else if ( coplanar( pA, pB, pD, pP ) ) {
 			Case = 31;
 		} else if ( coplanar( pA, pC, pD, pP ) ) {
@@ -1236,7 +1639,7 @@ namespace Delaunay3D {
 			Case = 33;
 		} else {
 			REAL t,v,w;
-			if ( SegmentTriangleIntersect_DoubleSided( pP, pD, pA, pB, pC, t, v, w ) ) {
+			if ( segmentTriangleIntersect_DoubleSided( pP, pD, pA, pB, pC, t, v, w ) ) {
 				// the segment p-d crosses the shared face. Therefore the union between T and Ta
 				// is convex
 				Case = 1;
@@ -1248,7 +1651,7 @@ namespace Delaunay3D {
 
 #if _DEBUG
 		if ( Case != 4 ) {
-			assert( !T.isFlat( vertices ) );
+			assert( !Tetrahedron::isFlat( T, vertices ) );
 		}
 #endif
 
@@ -1309,16 +1712,16 @@ namespace Delaunay3D {
 					for( int s = 0; !fixed && s < 3; s++ ) {
 						const int a = sharedVertices[ s ];
 						const int b = sharedVertices[ ( s + 1 ) % 3 ];
-						const int abp = T.getFaceFromVertices( a, b, p );
-						const int bap = Ta.getFaceFromVertices( b, a, d );
+						const int abp = Tetrahedron::getFaceFromVertices( T, a, b, p );
+						const int bap = Tetrahedron::getFaceFromVertices( Ta, b, a, d );
 #if _DEBUG
 						if ( abp < 0 ) {
-							assert( T.getFaceFromVertices(b, a, p ) < 0 );
-							assert( T.getFaceFromVertices(b, p, a ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( T, b, a, p ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( T, b, p, a ) < 0 );
 						}
 						if ( bap < 0 ) {
-							assert( Ta.getFaceFromVertices( a, b, p ) < 0 );
-							assert( Ta.getFaceFromVertices( a, p, b ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( Ta, a, b, p ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( Ta ,a, p, b ) < 0 );
 						}
 #endif
 						if ( abp >= 0 && bap >= 0 ) {
@@ -1327,7 +1730,7 @@ namespace Delaunay3D {
 							if ( iTb1 >= 0 && iTb1 == iTb2 ) {
 #if _DEBUG
 								tetrahedron_t& Tb = tetrahedra[ iTb1 ];								
-								assert( Tb.getVertexOutsideFace( Tb.getFaceFromVertices( a, b, p ) ) == d );
+								assert( Tetrahedron::getVertexOutsideFace( Tb, Tetrahedron::getFaceFromVertices( Tb, a, b, p ) ) == d );
 #endif
 								fixed = true;
 								unsigned int result[2];
@@ -1369,16 +1772,16 @@ namespace Delaunay3D {
 					for( int s = 0; !fixed && s < 3; s++ ) {
 						const int a = sharedVertices[ s ];
 						const int b = sharedVertices[ ( s + 1 ) % 3 ];
-						const int abp = T.getFaceFromVertices( a, b, p );
-						const int bap = Ta.getFaceFromVertices( b, a, d );
+						const int abp = Tetrahedron::getFaceFromVertices( T, a, b, p );
+						const int bap = Tetrahedron::getFaceFromVertices( Ta, b, a, d );
 #if _DEBUG
 						if ( abp < 0 ) {
-							assert( T.getFaceFromVertices(b, a, p ) < 0 );
-							assert( T.getFaceFromVertices(b, p, a ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( T ,b, a, p ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( T, b, p, a ) < 0 );
 						}
 						if ( bap < 0 ) {
-							assert( Ta.getFaceFromVertices( a, b, p ) < 0 );
-							assert( Ta.getFaceFromVertices( a, p, b ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( Ta, a, b, p ) < 0 );
+							assert( Tetrahedron::getFaceFromVertices( Ta, a, p, b ) < 0 );
 						}
 #endif
 						if ( abp >= 0 && bap >= 0 ) {
@@ -1387,7 +1790,7 @@ namespace Delaunay3D {
 							if ( iTb1 >= 0 && iTb1 == iTb2 ) {
 #if _DEBUG
 								tetrahedron_t& Tb = tetrahedra[ iTb1 ];								
-								assert( Tb.getVertexOutsideFace( Tb.getFaceFromVertices( a, b, p ) ) == d );
+								assert( Tetrahedron::getVertexOutsideFace( Tb, Tetrahedron::getFaceFromVertices( Tb, a, b, p ) ) == d );
 #endif
 								fixed = true;
 								unsigned int result[2];
@@ -1444,8 +1847,8 @@ namespace Delaunay3D {
 						sharedSegmentB = sharedVertices[ 2 ];
 					}
 					assert( coplanar( vertices[ sharedSegmentA ], vertices[ sharedSegmentB ], vertices[ p ], vertices[ d ] ) );
-					int faceT = T.getFaceFromVertices( sharedSegmentA, sharedSegmentB, p );				
-					int faceTa = Ta.getFaceFromVertices( sharedSegmentB, sharedSegmentA, d );
+					int faceT = Tetrahedron::getFaceFromVertices( T, sharedSegmentA, sharedSegmentB, p );				
+					int faceTa = Tetrahedron::getFaceFromVertices( Ta, sharedSegmentB, sharedSegmentA, d );
 					assert( faceT >= 0 && faceTa >= 0 );
 
 					int iNeighborT = T.neighbors[ faceT ];
@@ -1453,19 +1856,21 @@ namespace Delaunay3D {
 					if ( iNeighborT >= 0 && iNeighborTa >= 0 ) {
 						tetrahedron_t& Tb = tetrahedra[ iNeighborT ];
 						tetrahedron_t& Tc = tetrahedra[ iNeighborTa ];
-						if ( Tb.isValid() && Tc.isValid() && Tb.adjacentTo( Tc ) ) {
+						if ( Tb.isValid() && 
+							 Tc.isValid() && 
+							 Tetrahedron::adjacentTo( Tb, Tc ) ) {
 
 
-							int sharedFaceT_Tb = Tb.getFaceFromVertices( sharedSegmentA, sharedSegmentB, p );
+							int sharedFaceT_Tb = Tetrahedron::getFaceFromVertices( Tb, sharedSegmentA, sharedSegmentB, p );
 							assert( sharedFaceT_Tb >= 0 );							
-							const int c = T.getVertexOutsideFace( faceT );
-							assert( Ta.getVertexOutsideFace( faceTa ) == c );
-							const int d = Tb.getVertexOutsideFace( sharedFaceT_Tb );
+							const int c = Tetrahedron::getVertexOutsideFace( T, faceT );
+							assert( Tetrahedron::getVertexOutsideFace( Ta, faceTa ) == c );
+							const int d = Tetrahedron::getVertexOutsideFace( Tb, sharedFaceT_Tb );
 #if _DEBUG
 							{
 								int ta0, ta1, ta2;
 								Ta.getFaceVertices( faceTa, ta0, ta1, ta2 );
-								assert( Tc.getVertexOutsideFace( Tc.getFaceFromVertices( ta0, ta2, ta1 ) ) == d );
+								assert( Tetrahedron::getVertexOutsideFace( Tc, Tetrahedron::getFaceFromVertices( Tc ,ta0, ta2, ta1 ) ) == d );
 							}
 #endif
 							// Flip44 can be symmetrical around the edge sharedSegmentA <-> sharedSegmentB, so the flat plane
@@ -1500,8 +1905,8 @@ namespace Delaunay3D {
 	Delaunay3D::InsertOnePoint
 	================
 	*/
-	void Delaunay3D::insertOnePoint( const CoreLib::List< Point >& vertices, const int pointIndex, 
-									 CoreLib::List< tetrahedron_t >& tetrahedra ) {
+	void insertOnePoint( const CoreLib::List< Point >& vertices, const int pointIndex, 
+						 CoreLib::List< tetrahedron_t >& tetrahedra ) {
 		
 		// Find the tetrahedron containing pointIndex
 		int t = walk( vertices[ pointIndex ], 0, vertices, tetrahedra );
@@ -1540,7 +1945,7 @@ namespace Delaunay3D {
 			// T = { a, b, c, p }
 			int face = 0;
 			for( ; face < 4; face++ ) {
-				if ( T.getVertexOutsideFace( face ) == pointIndex ) {
+				if ( Tetrahedron::getVertexOutsideFace( T, face ) == pointIndex ) {
 					break;
 				}
 			}
@@ -1548,7 +1953,7 @@ namespace Delaunay3D {
 				continue; // something went wrong. skip the tetrahedron
 			}
 
-			assert( T.getVertexOutsideFace( face ) == pointIndex );
+			assert( Tetrahedron::getVertexOutsideFace( T, face ) == pointIndex );
 
 			// Get adjacent tetrahedron Ta having a,b,c as a facet
 			if ( T.neighbors[ face ] >= 0 ) {
@@ -1558,8 +1963,8 @@ namespace Delaunay3D {
 
 				int a,b,c;
 				T.getFaceVertices( face, a, b, c );
-				const int sharedFace = Ta.getFaceFromVertices( a, c, b ); // reverse face
-				const int opposedVertex = Ta.getVertexOutsideFace( sharedFace );
+				const int sharedFace = Tetrahedron::getFaceFromVertices( Ta, a, c, b ); // reverse face
+				const int opposedVertex = Tetrahedron::getVertexOutsideFace( Ta, sharedFace );
 
 				// OpposedVertex CAN be pointIndex in a degenerate Case 1, where two adjacent tetrahedra also share
 				// the vertex opposed to their shared face (that is, they're effectively the same tetrahedron with the 
@@ -1577,7 +1982,7 @@ namespace Delaunay3D {
 				const Point& T2 = vertices[ T.v[ 1 ] ];
 				const Point& T3 = vertices[ T.v[ 3 ] ];							
 
-				const bool doFlip =	T.isFlat( vertices ) || // if our tetrahedron is flat, it is not valid and we must flip it
+				const bool doFlip =	Tetrahedron::isFlat( T, vertices ) || // if our tetrahedron is flat, it is not valid and we must flip it
 									( orient( T0, T1, T2, T3 ) >= 0 && inSphere( T0, T1, T2, T3, d ) > 0 ) || 
 									( orient( T0, T2, T1, T3 ) >= 0 && inSphere( T0, T2, T1, T3, d ) > 0 );				
 				if ( doFlip ) {
@@ -1592,331 +1997,6 @@ namespace Delaunay3D {
 	}
 
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	// tetrahedron_t
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-		bool tetrahedron_t::checkFaceOrientations( const CoreLib::List< Point >& vertices ) const {
-		// check whether the tetrahedron centroid lies behind every face
-
-		const Point& vo = vertices[ v[ 0 ] ];
-		const Point& va = vertices[ v[ 1 ] ];
-		const Point& vb = vertices[ v[ 2 ] ];
-		const Point& vc = vertices[ v[ 3 ] ];
-#if 0 // using centroid
-		const Vector3<REAL> a = va - vo;
-		const Vector3<REAL> b = vb - vo;
-		const Vector3<REAL> c = vc - vo;
-		Point C = vo + ( a + b + c ) / 4;
-#elif 1 // using incenter
-		const REAL a = getFaceArea( 2, vertices );
-		const REAL b = getFaceArea( 3, vertices );
-		const REAL c = getFaceArea( 1, vertices );
-		const REAL d = getFaceArea( 0, vertices );
-		const REAL t = a + b + c + d;
-		Point C = vo * ( a / t ) + va * ( b / t ) + vb * ( c / t ) + vc * ( d / t);
-#else // monge point
-		const Vector3<REAL> a = va - vo;
-		const Vector3<REAL> b = vb - vo;
-		const Vector3<REAL> c = vc - vo;
-		const Vector3<REAL> bCrossC = b.Cross( c );
-		const Vector3<REAL> cCrossA = c.Cross( a );
-		const Vector3<REAL> aCrossB = a.Cross( b );
-
-		Point C = vo + ( a * ( ( b + c ) * bCrossC ) + b * ( ( c + a ) * cCrossA ) + c * ( ( a + b ) * aCrossB ) ) / ( a * bCrossC * 2 );
-
-#endif
-		int v2[3];
-		for( int i = 0; i < 4; i++ ) {
-			getFaceVertices( i, v2[0], v2[1], v2[2] );
-			/*const Point faceCentroid = ( vertices[ v2[ 0 ] ] + vertices[ v2[ 1 ] ] + vertices[ v2[ 2 ] ] ) / 3;
-			Vector3<REAL> faceNormal = Vector3<REAL>::Cross( vertices[ v2[ 2 ] ] - vertices[ v2[ 0 ] ], vertices[ v2[ 1 ] ] - vertices[ v2[ 0 ] ] );
-			const Vector3< REAL > fromCentroid = faceCentroid - C;
-			if ( faceNormal * fromCentroid < -(REAL)0.001 ) {
-				return false;
-			}*/
-			if( Delaunay3D::orient( vertices[ v2[0] ], vertices[ v2[1] ], vertices[ v2[2] ], C ) > 0 ) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	
-	bool tetrahedron_t::isFlat( const CoreLib::List< Point >& vertices ) const {
-		return Delaunay3D::coplanar( vertices[ v[ 0 ] ], vertices[ v[ 1 ] ], vertices[ v[ 2 ] ], vertices[ v[ 3 ] ] );
-	}
-
-	void tetrahedron_t::fixFaceOrientations( const CoreLib::List< Point >& vertices ) {
-		using namespace RenderLib::Math;
-
-		// check whether the tetrahedron centroid lies behind every face
-
-		const Point& vo = vertices[ v[ 0 ] ];
-		const Point& va = vertices[ v[ 1 ] ];
-		const Point& vb = vertices[ v[ 2 ] ];
-		const Point& vc = vertices[ v[ 3 ] ];
-
-		if ( isFlat( vertices ) ) {
-			// the test makes no sense on flat tetrahedra as the centroid is neither inside nor outside the tetrahedron
-			return;
-		}
-#if 1 // using centroid
-		const Vector3<REAL> a = va - vo;
-		const Vector3<REAL> b = vb - vo;
-		const Vector3<REAL> c = vc - vo;
-		Point C = vo + ( a + b + c ) / 4;
-#elif 1 // using incenter
-		const REAL a = getFaceArea( 2, vertices );
-		const REAL b = getFaceArea( 3, vertices );
-		const REAL c = getFaceArea( 1, vertices );
-		const REAL d = getFaceArea( 0, vertices );
-		const REAL t = a + b + c + d;
-		Point C = vo * ( a / t ) + va * ( b / t ) + vb * ( c / t ) + vc * ( d / t);
-#else // monge point
-		const Vector3<REAL> a = va - vo;
-		const Vector3<REAL> b = vb - vo;
-		const Vector3<REAL> c = vc - vo;
-		const Vector3<REAL> bCrossC = b.Cross( c );
-		const Vector3<REAL> cCrossA = c.Cross( a );
-		const Vector3<REAL> aCrossB = a.Cross( b );
-
-		Point C = vo + ( a * ( ( b + c ) * bCrossC ) + b * ( ( c + a ) * cCrossA ) + c * ( ( a + b ) * aCrossB ) ) / ( a * bCrossC * 2 );
-
-#endif
-		int v2[3];
-		for( int i = 0; i < 4; i++ ) {
-			getFaceVertices( i, v2[0], v2[1], v2[2] );
-			const Vector3<REAL> faceNormal = Vector3<REAL>::normalize( Vector3<REAL>::cross( vertices[ v2[2] ] - vertices[ v2[0] ], vertices[ v2[1] ] - vertices[ v2[0] ] ) ); // we can get away not normalizing it, since we're just interested in the distance sign
-			const REAL d = Vector3<REAL>::dot(faceNormal, vertices[ v2[0] ].fromOrigin());
-			const REAL distToPlane = Vector3<REAL>::dot(faceNormal, C.fromOrigin()) - d;
-			const REAL epsilon = 1e-1;
-			if ( distToPlane > epsilon ) { // the centroid should be behind the plane
-				reverseFace( i ); 
-			}
-		}				
-	}
-
-	tetrahedron_t::tetrahedron_t()
-	{
-		markInvalid();
-	}
-
-	tetrahedron_t::tetrahedron_t( const tetrahedron_t& other )
-	{
-		memcpy( v, other.v, 4 * sizeof( int ) );
-		memcpy( neighbors, other.neighbors, 4 * sizeof( int ) );
-		memcpy( face, other.face, 3 * 4 * sizeof( int ) );
-	}
-
-	void tetrahedron_t::markInvalid()
-	{
-		for( int i = 0; i < 4; i++ ) {
-			v[ i ] = -1;
-			neighbors[ i ] = -1;
-		}
-		face[ 0 ][ 0 ] = 0; face[ 0 ][ 1 ] = 1; face[ 0 ][ 2 ] = 2;
-		face[ 1 ][ 0 ] = 0; face[ 1 ][ 1 ] = 3; face[ 1 ][ 2 ] = 1;
-		face[ 2 ][ 0 ] = 1; face[ 2 ][ 1 ] = 3; face[ 2 ][ 2 ] = 2;
-		face[ 3 ][ 0 ] = 2; face[ 3 ][ 1 ] = 3; face[ 3 ][ 2 ] = 0;
-	}
-
-	bool tetrahedron_t::isValid() const
-	{
-		for( int i = 0; i < 4; i++ ) {
-			if ( v[ i ] < 0 ) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	bool tetrahedron_t::containsVertex( const int vert ) const
-	{
-		return v[ 0 ] == vert || v[ 1 ] == vert || v[ 2 ] == vert || v[ 3 ] == vert;
-	}
-
-	void tetrahedron_t::getFaceVertices( const int f, int& a, int& b, int& c ) const
-	{
-		assert( f >= 0 && f < 4 );
-		assert( face[f][0] >= 0 && face[f][0] < 4 );
-		assert( face[f][1] >= 0 && face[f][1] < 4 );
-		assert( face[f][2] >= 0 && face[f][2] < 4 );
-		a = v[face[f][0]]; b = v[face[f][1]]; c = v[face[f][2]];
-	}
-
-	REAL tetrahedron_t::getFaceArea( const int f, const CoreLib::List< Point >& vertices ) const
-	{
-		using namespace RenderLib::Geometry;
-		switch( f ) {
-				case 0:
-					return TriangleArea( vertices[ v[0] ], vertices[ v[1] ], vertices[ v[2] ] );
-				case 1:
-					return TriangleArea( vertices[ v[0] ], vertices[ v[3] ], vertices[ v[1] ] );
-				case 2:
-					return TriangleArea( vertices[ v[1] ], vertices[ v[3] ], vertices[ v[2] ] );
-				case 3:
-					return TriangleArea( vertices[ v[2] ], vertices[ v[3] ], vertices[ v[0] ] );
-				default: 
-					assert( false );
-					return -1;
-		}
-	}
-
-	int tetrahedron_t::getFaceFromVertices( const int a, const int b, const int c ) const
-	{
-		for( int i = 0; i < 4; i++ ) {
-			int check = 0;
-			for( int j = 0; j < 3; j++ ) {
-				if ( v[ face[ i ][ j ] ] == a || v[ face[ i ][ j ] ] == b || v[ face[ i ][ j ] ] == c ) {
-					check |= ( 1 << j );						
-				}
-			}
-			if ( check == 7 /* 111 */ ) {
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
-	int tetrahedron_t::getVertexOutsideFace( int f ) const
-	{
-		assert( f >= 0 && f < 4 );
-		int check = 0;
-		for( int i = 0; i < 3; i++ ) {
-			check |= ( 1 << face[ f ][ i ] );
-		}
-		switch( check ) {
-				case 14: // 1110
-					return v[0];
-				case 13: // 1101
-					return v[1];
-				case 11: // 1011
-					return v[2];
-				case 7: // 0111
-					return v[3];
-				default:
-					assert( false );
-					return -1;
-		}
-	}
-
-	bool tetrahedron_t::sameWinding( const int v1[3], const int v2[3] ) const
-	{
-		int offset2;
-		for( offset2 = 0; offset2 < 3; offset2++ ) {
-			if ( v2[ offset2 ] == v1[ 0 ] ) {
-				break;
-			}
-		}
-		if ( offset2 == 3 ) { 
-			// sequences are not even the same
-			return false;
-		}
-		for( int offset1 = 1; offset1 < 3; offset1++ ) {
-			offset2 = ( offset2 + 1 ) % 3;
-			if ( v1[ offset1 ] != v2[ offset2 ] ) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	int tetrahedron_t::sharedFace( const tetrahedron_t& other, bool reversed ) const
-	{
-		int verts[ 3 ];
-		int verts2[3];
-		for( int i = 0; i < 4; i++ ) {
-			other.getFaceVertices( i, verts[ 0 ], verts[ 1 ], verts[ 2 ] );
-			int face = getFaceFromVertices( verts[ 0 ], verts[ 2 ], verts[ 1 ] ); // reverse the face order as they're confronted
-			if ( face >= 0 ) {
-				getFaceVertices( face, verts2[ 0 ], verts2[ 1 ], verts2[ 2 ] );
-
-				if ( reversed &&  // tetrahedra are adjacent on each side of the adjacent face, so the face is declared on reverse order for each tetrahedron 
-					sameWinding( verts, verts2 ) ) {
-						face = -1;					
-				} 
-				if ( !reversed && // the tetrahedra overlap on the same space (during flip 44 for example) so the shared faces have the same orientation
-					!sameWinding( verts, verts2 ) ) {
-						face = -1;					
-				}
-				if ( face >= 0 ) {
-					return face;
-				}
-			}
-		}
-
-		return -1;
-	}
-
-	bool tetrahedron_t::adjacentTo( const tetrahedron_t& other ) const
-	{
-		return sharedFace( other, true ) >= 0;
-	}
-
-	bool tetrahedron_t::checkNeighbors( const int thisIndex, const CoreLib::List< tetrahedron_t >& tetrahedra, const CoreLib::List< Point >& vertices ) const
-	{
-		for( int i = 0; i < 4; i++ ) {
-			if ( neighbors[ i ] >= 0 ) {
-				const tetrahedron_t& neighbor = tetrahedra[ neighbors[ i ] ];
-				if ( !neighbor.isValid() ) {
-					return false;
-				}
-
-				const int sf = neighbor.sharedFace( *this, true );
-				if ( sf < 0 ) {
-					return false;
-				}
-
-				if ( sameOrientation( i, neighbor, sf, vertices ) ) { // they should be reversed
-					return false;
-				}
-
-				if ( neighbor.neighbors[ sf ] != thisIndex ) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	void tetrahedron_t::destroy( CoreLib::List< tetrahedron_t >& tetrahedra )
-	{
-		// unlink neighbors
-		for( int i = 0; i < 4; i++ ) {
-			if ( neighbors[ i ] >= 0 ) {
-				tetrahedron_t& n = tetrahedra[ neighbors[ i ] ];
-				if ( !n.isValid() ) {
-					continue;
-				}
-				const int sf = n.sharedFace( *this, true );
-				n.neighbors[ sf ] = -1;
-			}
-		}
-
-		markInvalid();
-	}
-
-	bool tetrahedron_t::sameOrientation( const int face, const tetrahedron_t& other, const int otherFace, const CoreLib::List< Point >& vertices ) const
-	{
-		using namespace RenderLib::Math;
-		int vi1[3], vi2[3];
-		getFaceVertices( face, vi1[0], vi1[1], vi1[2] );
-		other.getFaceVertices( otherFace, vi2[0], vi2[1], vi2[2] );
-		Vector3<REAL> n1 = Vector3<REAL>::cross( vertices[vi1[1]] - vertices[vi1[0]], vertices[vi1[2]] - vertices[vi1[0]] );
-		Vector3<REAL> n2 = Vector3<REAL>::cross( vertices[vi2[1]] - vertices[vi2[0]], vertices[vi2[2]] - vertices[vi2[0]] );
-		return Vector3<REAL>::dot(n1, n2) > (REAL)0;
-	}
-
-	void tetrahedron_t::reverseFace( const int f )
-	{
-		const int v0 = face[ f ][ 0 ];
-		face[ f ][ 0 ] = face[ f ][ 2 ];
-		face[ f ][ 2 ] = v0;
-	}
 
 } // namespace Delaunay3D
 } // namespace Geometry

@@ -113,7 +113,7 @@ namespace Geometry {
 	}
 
 	template< typename T >
-	inline bool SegmentTriangleIntersect_DoubleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Vector3<T>& dir, 
+	inline bool segmentTriangleIntersect_DoubleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Vector3<T>& dir, 
 													 T minT, T maxT, 
 													 const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c, 
 													 T& t, T& v, T& w,
@@ -148,7 +148,7 @@ namespace Geometry {
 	}
 
 	template< typename T >
-	inline bool SegmentTriangleIntersect_DoubleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
+	inline bool segmentTriangleIntersect_DoubleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
 													 const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c, 
 													 T& t, T& v, T& w,
 													 const T epsilon = 1e-5 ) {		
@@ -156,7 +156,7 @@ namespace Geometry {
 		Vector3<T> dir = q - p;
 		T maxT = dir.normalize();
 		const T lengthEpsilon = 1e-4;
-		return SegmentTriangleIntersect_DoubleSided<T>( p, dir, -lengthEpsilon, maxT + lengthEpsilon, a, b, c, t, v, w, epsilon );
+		return segmentTriangleIntersect_DoubleSided<T>( p, dir, -lengthEpsilon, maxT + lengthEpsilon, a, b, c, t, v, w, epsilon );
 	}
 
 } // namespace Geometry
