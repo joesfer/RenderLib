@@ -34,7 +34,7 @@
 
 namespace RenderLib {
 namespace Geometry {
-namespace Delaunay3D {
+namespace Delaunay {
 
 	typedef double REAL;
 	typedef RenderLib::Math::Point3<REAL> Point;	
@@ -77,6 +77,6 @@ namespace Delaunay3D {
 
 	};
 
-} // namespace Delaunay3D
+} // namespace Delaunay
 } // namespace Geometry
 } // namespace RenderLib

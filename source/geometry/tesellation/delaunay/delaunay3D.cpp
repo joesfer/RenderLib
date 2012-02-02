@@ -31,8 +31,13 @@
 
 namespace RenderLib {
 namespace Geometry {
-namespace Delaunay3D {
+namespace Delaunay {
 
+// the internal namespace hides away all implementation details to avoid exposing 
+// them in the header, thus providing a much cleaner interface in the parent 
+// Delaunay namespace
+
+namespace internal { 
 	// Foreward declarations /////////////////////////////////////////////////
 
 	// Predicates //////////////////////////////////////////////////////////////////////////
@@ -132,9 +137,7 @@ namespace Delaunay3D {
 
 		bool checkFaceOrientations( const tetrahedron_t& T, 
 									const CoreLib::List< Point >& vertices ) {
-			
-			using namespace RenderLib::Geometry::Delaunay3D;
-
+				
 			// check whether the tetrahedron centroid lies behind every face
 
 			const Point& vo = vertices[ T.v[ 0 ] ];
@@ -180,7 +183,6 @@ namespace Delaunay3D {
 		// A flat tetrahedron has no circumsphere
 		//////////////////////////////////////////////////////////////////////////
 		bool isFlat( const tetrahedron_t& t, const CoreLib::List< Point >& vertices ) {
-			using namespace RenderLib::Geometry::Delaunay3D;
 			return coplanar( vertices[ t.v[ 0 ] ], vertices[ t.v[ 1 ] ], vertices[ t.v[ 2 ] ], vertices[ t.v[ 3 ] ] );
 		}
 
@@ -424,126 +426,13 @@ namespace Delaunay3D {
 
 	} // namespace Tetrahedron
 
-	tetrahedron_t::tetrahedron_t()
-	{
-		Tetrahedron::markInvalid(*this);
-	}
-
-	tetrahedron_t::tetrahedron_t( const tetrahedron_t& other )
-	{
-		memcpy( v, other.v, 4 * sizeof( int ) );
-		memcpy( neighbors, other.neighbors, 4 * sizeof( int ) );
-		memcpy( face, other.face, 3 * 4 * sizeof( int ) );
-	}
-
-	bool tetrahedron_t::isValid() const {
-		for( int i = 0; i < 4; i++ ) {
-			if ( v[ i ] < 0 ) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	bool tetrahedron_t::containsVertex( const int vert ) const {
-		return v[ 0 ] == vert || v[ 1 ] == vert || v[ 2 ] == vert || v[ 3 ] == vert;
-	}
-
-	void tetrahedron_t::getFaceVertices( const int f, int& a, int& b, int& c ) const {
-		assert( f >= 0 && f < 4 );
-		assert( face[f][0] >= 0 && face[f][0] < 4 );
-		assert( face[f][1] >= 0 && face[f][1] < 4 );
-		assert( face[f][2] >= 0 && face[f][2] < 4 );
-		a = v[ face[f][0] ]; 
-		b = v[ face[f][1] ]; 
-		c = v[ face[f][2] ];
-	}
+	
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	// Delaunay3D
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-
-	#if LEAVE_CONTAINING_TETRAHEDRON 
-	bool Delaunay3D::tetrahedralize( CoreLib::List< Point >& srcPoints,
-							 		 CoreLib::List< tetrahedron_t >& tetrahedra ) {
-#else
-	bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
-		CoreLib::List< tetrahedron_t >& tetrahedra ) {
-#endif
-		using namespace RenderLib::Math;
-		using namespace RenderLib::Geometry;
-
-		if ( srcPoints.size() == 0 ) { 
-			return false;
-		}
-
-		BoundingBox bounds;
-		for( size_t i = 0; i < srcPoints.size(); i++ ) {
-			bounds.expand( srcPoints[ i ] );
-		}
-
-		Point3f center;
-		float radius;
-		bounds.boundingSphere( center, radius );
-		radius *= 2; // avoid a too tight bound since we want the containing tetrahedron's faces to wrap all the points
-		if ( srcPoints.size() < 2 ) {
-			// we don't have enough points to define a volume
-			// so give it a fixed extra radius
-			radius = 1.0;
-		}
-		
-		// copy the source points list, we will need to add some extra
-		// points while building the tessellation, but then we'll restrict
-		// the resulting tetrahedra to the initial point set.
-#if	LEAVE_CONTAINING_TETRAHEDRON
-		CoreLib::List< Point >& pointSet = srcPoints;
-#else
-		CoreLib::List< Point > pointSet = srcPoints;
-#endif
-		const size_t numSrcPoints = srcPoints.size();
-
-		// generate the tetrahedron from the sphere it contains (circumsphere)
-		tetrahedron_t& bigT = tetrahedra.append();
-		containingTetrahedron( center, radius, bigT, pointSet );
-		Tetrahedron::fixFaceOrientations( bigT, pointSet );
-
-		tetrahedra.setGranularity( 4 * numSrcPoints );
-		for( size_t i = 0; i < numSrcPoints; i++ ) {
-			insertOnePoint( pointSet, i, tetrahedra );
-		}
-#if _DEBUG
-		// verify Delaunay condition (empty spheres) for all tetrahedra
-		for( size_t i = 0; i < tetrahedra.size(); i++ ) {
-			const tetrahedron_t& T = tetrahedra[ i ];
-			if ( !T.isValid() ) {
-				continue;
-			}
-			const Point& T0 = pointSet[ T.v[ 0 ] ];
-			const Point& T1 = pointSet[ T.v[ 2 ] ];
-			const Point& T2 = pointSet[ T.v[ 1 ] ];
-			const Point& T3 = pointSet[ T.v[ 3 ] ];
-			for( size_t j = 0; j < pointSet.size(); j++ ) {
-				assert( inSphere( T0, T1, T2, T3, pointSet[ j ] ) <= 0 );
-			}
-		}
-#endif
-#if !LEAVE_CONTAINING_TETRAHEDRON
-		// Delete all tetrahedra containing one of the additional vertices
-		// inserted for the containing tetrahedron
-		for( size_t i = 0; i < tetrahedra.size(); i++ ) {
-			tetrahedron_t& t = tetrahedra[ i ];
-			for( size_t j = 0; j < 4; j++ ) {
-				if( t.v[ j ] >= srcPoints.size() ) {
-					t.destroy( tetrahedra );
-					break;
-				}
-			}			
-		}
-#endif
-		return true;
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Predicates
@@ -1996,6 +1885,135 @@ namespace Delaunay3D {
 		return *(static_cast< const int* >(p0)) - *(static_cast< const int* >(p1));  
 	}
 
+
+} // namespace internal
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// tetrahedron_t public interface
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+tetrahedron_t::tetrahedron_t()
+{
+	internal::Tetrahedron::markInvalid(*this);
+}
+
+tetrahedron_t::tetrahedron_t( const tetrahedron_t& other )
+{
+	memcpy( v, other.v, 4 * sizeof( int ) );
+	memcpy( neighbors, other.neighbors, 4 * sizeof( int ) );
+	memcpy( face, other.face, 3 * 4 * sizeof( int ) );
+}
+
+bool tetrahedron_t::isValid() const {
+	for( int i = 0; i < 4; i++ ) {
+		if ( v[ i ] < 0 ) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool tetrahedron_t::containsVertex( const int vert ) const {
+	return v[ 0 ] == vert || v[ 1 ] == vert || v[ 2 ] == vert || v[ 3 ] == vert;
+}
+
+void tetrahedron_t::getFaceVertices( const int f, int& a, int& b, int& c ) const {
+	assert( f >= 0 && f < 4 );
+	assert( face[f][0] >= 0 && face[f][0] < 4 );
+	assert( face[f][1] >= 0 && face[f][1] < 4 );
+	assert( face[f][2] >= 0 && face[f][2] < 4 );
+	a = v[ face[f][0] ]; 
+	b = v[ face[f][1] ]; 
+	c = v[ face[f][2] ];
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Delaunay3D public interface
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+#if LEAVE_CONTAINING_TETRAHEDRON 
+bool Delaunay3D::tetrahedralize( CoreLib::List< Point >& srcPoints,
+								CoreLib::List< tetrahedron_t >& tetrahedra ) {
+#else
+bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
+								CoreLib::List< tetrahedron_t >& tetrahedra ) {
+#endif
+									using namespace RenderLib::Math;
+									using namespace RenderLib::Geometry;
+
+									if ( srcPoints.size() == 0 ) { 
+										return false;
+									}
+
+									BoundingBox bounds;
+									for( size_t i = 0; i < srcPoints.size(); i++ ) {
+										bounds.expand( srcPoints[ i ] );
+									}
+
+									Point3f center;
+									float radius;
+									bounds.boundingSphere( center, radius );
+									radius *= 2; // avoid a too tight bound since we want the containing tetrahedron's faces to wrap all the points
+									if ( srcPoints.size() < 2 ) {
+										// we don't have enough points to define a volume
+										// so give it a fixed extra radius
+										radius = 1.0;
+									}
+
+									// copy the source points list, we will need to add some extra
+									// points while building the tessellation, but then we'll restrict
+									// the resulting tetrahedra to the initial point set.
+#if	LEAVE_CONTAINING_TETRAHEDRON
+									CoreLib::List< Point >& pointSet = srcPoints;
+#else
+									CoreLib::List< Point > pointSet = srcPoints;
+#endif
+									const size_t numSrcPoints = srcPoints.size();
+
+									// generate the tetrahedron from the sphere it contains (circumsphere)
+									tetrahedron_t& bigT = tetrahedra.append();
+									internal::containingTetrahedron( center, radius, bigT, pointSet );
+									internal::Tetrahedron::fixFaceOrientations( bigT, pointSet );
+
+									tetrahedra.setGranularity( 4 * numSrcPoints );
+									for( size_t i = 0; i < numSrcPoints; i++ ) {
+										internal::insertOnePoint( pointSet, i, tetrahedra );
+									}
+#if _DEBUG
+									// verify Delaunay condition (empty spheres) for all tetrahedra
+									for( size_t i = 0; i < tetrahedra.size(); i++ ) {
+										const tetrahedron_t& T = tetrahedra[ i ];
+										if ( !T.isValid() ) {
+											continue;
+										}
+										const Point& T0 = pointSet[ T.v[ 0 ] ];
+										const Point& T1 = pointSet[ T.v[ 2 ] ];
+										const Point& T2 = pointSet[ T.v[ 1 ] ];
+										const Point& T3 = pointSet[ T.v[ 3 ] ];
+										for( size_t j = 0; j < pointSet.size(); j++ ) {
+											assert( internal::inSphere( T0, T1, T2, T3, pointSet[ j ] ) <= 0 );
+										}
+									}
+#endif
+#if !LEAVE_CONTAINING_TETRAHEDRON
+									// Delete all tetrahedra containing one of the additional vertices
+									// inserted for the containing tetrahedron
+									for( size_t i = 0; i < tetrahedra.size(); i++ ) {
+										tetrahedron_t& t = tetrahedra[ i ];
+										for( size_t j = 0; j < 4; j++ ) {
+											if( t.v[ j ] >= srcPoints.size() ) {
+												t.destroy( tetrahedra );
+												break;
+											}
+										}			
+									}
+#endif
+									return true;
+}
 
 
 } // namespace Delaunay3D
