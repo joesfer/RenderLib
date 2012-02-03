@@ -164,5 +164,30 @@ namespace Geometry {
 
 		return true;
 	}
+	
+	template<typename T>
+	float Orient( const RenderLib::Math::Vector2f& a, const RenderLib::Math::Vector2f& b, const RenderLib::Math::Vector2f& c )
+	{
+		using namespace RenderLib::Math;
+		return Matrix3<T>( a.x, a.y, 1, 
+						   b.x, b.y, 1,
+						   c.x, c.y, 1 ).determinant();
+	}
+
+	template<typename T>
+	float inCircle( const RenderLib::Math::Vector2<T>& a, const RenderLib::Math::Vector2<T>& b, const RenderLib::Math::Vector2<T>& c, const RenderLib::Math::Vector2<T>& p )
+	{
+		using namespace RenderLib::Math;
+		const float det = Matrix4<T>( a.x, a.y, a.x * a.x + a.y * a.y, 1, 
+									  b.x, b.y, b.x * b.x + b.y * b.y, 1,
+									  c.x, c.y, c.x * c.x + c.y * c.y, 1,
+									  p.x, p.y, p.x * p.x + p.y * p.y, 1 ).determinant();
+		if ( Orient<T>( a, b, c ) > 0 ) {
+			return det;
+		} else {
+			return -det;
+		}
+	}
+
 }
 }
