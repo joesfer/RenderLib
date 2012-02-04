@@ -2,6 +2,8 @@ Description:
 	
 	Shared library holding common code used in various projects from www.joesfer.com.	
 	
+	RenderLib provides classes specifically related to graphics: geometry, data structures, algebra, etc.
+	
 License:
 
 	This software is released under the LGPL-3.0 license: http://www.opensource.org/licenses/lgpl-3.0.html	
