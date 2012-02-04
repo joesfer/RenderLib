@@ -26,7 +26,7 @@
 namespace RenderLib {
 namespace Geometry {
 
-	bool SegmentIntersect(  const RenderLib::Math::Vector2f A, const RenderLib::Math::Vector2f B, 
+	bool segmentIntersect(  const RenderLib::Math::Vector2f A, const RenderLib::Math::Vector2f B, 
 							const RenderLib::Math::Vector2f C, const RenderLib::Math::Vector2f D, 
 							const float epsilon ) {
 
@@ -43,15 +43,15 @@ namespace Geometry {
 				&& dist2CD > epsilon;
 #else	// using triangle areas (Real Time Collision Detection book)
 			epsilon; // avoid 'unreferenced parameter' warning
-			float a1 = Signed2DTriangleArea( A, B, D ); // compute winding of ABD [ + or - ]
-			float a2 = Signed2DTriangleArea( A, B, C ); // to intersect, must have sign opposite of a1
+			float a1 = signed2DTriangleArea( A, B, D ); // compute winding of ABD [ + or - ]
+			float a2 = signed2DTriangleArea( A, B, C ); // to intersect, must have sign opposite of a1
 
 			// if c and d are on different sides of AB, areas have different signs
 			if ( a1 != 0.0f && a2 != 0.0f && a1 * a2 < 0.0f ) {
 				// Compute signs of a and b with respect to segment cd
-				float a3 = Signed2DTriangleArea( C, D, A ); // Compute winding of cda [ + or - ]
+				float a3 = signed2DTriangleArea( C, D, A ); // Compute winding of cda [ + or - ]
 				// since area is constant a1 - a2 = a3 - a4, or a4 = a3 + a2 - a1
-				//float a4 = Signed2DTriangleArea( C, D, B );
+				//float a4 = signed2DTriangleArea( C, D, B );
 				float a4 = a3 + a2 - a1;
 				// Points a and b on different sides of cd if areas have different signs
 				if ( a3 * a4 < 0.0f ) {

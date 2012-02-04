@@ -31,18 +31,18 @@ namespace Geometry {
 	static const float COLLINEAR_EPSILON			= 1e-4f;
 	static const float EDGE_LENGTH_MIN_TRESHOLD		= 1e-3f;
 
-	inline float Signed2DTriangleArea(	const RenderLib::Math::Vector2f& A, 
+	inline float signed2DTriangleArea(	const RenderLib::Math::Vector2f& A, 
 										const RenderLib::Math::Vector2f& B, 
 										const RenderLib::Math::Vector2f& C ) {
 		return ( A.x - C.x ) * ( B.y - C.y ) - ( A.y - C.y ) * ( B.x - C.x );
 	}
 
-	bool SegmentIntersect(  const RenderLib::Math::Vector2f A, const RenderLib::Math::Vector2f B, 
+	bool segmentIntersect(  const RenderLib::Math::Vector2f A, const RenderLib::Math::Vector2f B, 
 							const RenderLib::Math::Vector2f C, const RenderLib::Math::Vector2f D, 
 							const float epsilon = SEGMENT_INTERSECTION_EPSILON );
 
 	template < typename T >
-	bool PointOnSegment( const RenderLib::Math::Vector2<T>& A, const RenderLib::Math::Vector2<T>& B, 
+	bool pointOnSegment( const RenderLib::Math::Vector2<T>& A, const RenderLib::Math::Vector2<T>& B, 
 						 const RenderLib::Math::Vector2<T>& P, 
 						 const T distanceEpsilon = 1e-3, const T parametricEpsilon = 1e-4,
 						 T* pointSegmentDistance = NULL ) {
@@ -72,7 +72,7 @@ namespace Geometry {
 	}
 
 	template<typename T>
-	inline bool SegmentTriangleIntersect_SingleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
+	inline bool segmentTriangleIntersect_SingleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
 													  const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c, 
 													  float& t, float& v, float& w ) {
 		using namespace RenderLib::Math;

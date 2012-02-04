@@ -277,7 +277,7 @@ namespace internal {
 					if ( edges[ j ] == edges[ j + 1 ] || edges[ j ] < 0 || edges[ j + 1 ] < 0 ) {
 						continue;
 					}
-					if ( SegmentIntersect( centroid, other, vertices[ edges[ j ] ], vertices[ edges[ j + 1 ] ], SEGMENT_INTERSECTION_EPSILON ) ) {
+					if ( segmentIntersect( centroid, other, vertices[ edges[ j ] ], vertices[ edges[ j + 1 ] ], SEGMENT_INTERSECTION_EPSILON ) ) {
 						intersections ++;
 					}
 				}
@@ -292,7 +292,7 @@ namespace internal {
 						if ( edges[ j ] == edges[ j + 1 ] || edges[ j ] < 0 || edges[ j + 1 ] < 0 ) {
 							continue;
 						}
-						if ( SegmentIntersect( centroid, other, vertices[ edges[ j ] ], vertices[ edges[ j + 1 ] ], SEGMENT_INTERSECTION_EPSILON ) ) {
+						if ( segmentIntersect( centroid, other, vertices[ edges[ j ] ], vertices[ edges[ j + 1 ] ], SEGMENT_INTERSECTION_EPSILON ) ) {
 							Vector2f a = vertices[ edges[ j ] ];
 							Vector2f b = vertices[ edges[ j + 1 ] ];
 							MString cmd = CoreLib::varArgsStr<1024>( "$c = `curve -d 1 -p %f %f 0 -p %f %f 0 -k 0 -k 1`; rename $c isectEdge%d_%d_%d_%d;", a.x, a.y, b.x, b.y, triIdx, j, edges[ j ], edges[ j + 1 ] );
@@ -458,7 +458,7 @@ namespace internal {
 			int edgeIdx = abs( triangle.edges[ i ] ) - 1;
 			const Edge_t& edge = edges[ edgeIdx ];
 			float distance;
-			if ( PointOnSegment<float>( vertices[ edge.vertices[ 0 ] ],
+			if ( pointOnSegment<float>( vertices[ edge.vertices[ 0 ] ],
 				vertices[ edge.vertices[ 1 ] ], 
 				p, 
 				Delaunay::internal::POINT_ON_SEGMENT_DISTANCE_EPSILON,
@@ -476,7 +476,7 @@ namespace internal {
 	}
 	void AdjacencyInfo::splitEdge( int edgeIndex, const RenderLib::Math::Vector2f& p, int result[ 4 ] ) {
 		Edge_t& edge = edges[ edgeIndex ];
-		assert( RenderLib::Geometry::PointOnSegment<float>( vertices[ edge.vertices[ 0 ] ],
+		assert( RenderLib::Geometry::pointOnSegment<float>( vertices[ edge.vertices[ 0 ] ],
 													vertices[ edge.vertices[ 1 ] ], 
 													p, 
 													Delaunay::internal::POINT_ON_SEGMENT_DISTANCE_EPSILON, 
@@ -638,7 +638,7 @@ namespace internal {
 
 		assert( A != B && A != C && A != D && B != C && B != D && C != D );
 
-		if ( !SegmentIntersect( vertices[ A ], vertices[ D ], vertices[ B ], vertices[ C ] ) ) {
+		if ( !segmentIntersect( vertices[ A ], vertices[ D ], vertices[ B ], vertices[ C ] ) ) {
 			// can't flip
 			return false;
 		}
@@ -797,7 +797,7 @@ namespace internal {
 
 					const int other = edge.vertices[ 0 ] == vIdx0 ? edge.vertices[ 1 ] : edge.vertices[ 0 ];
 
-					if ( PointOnSegment<float>( v0, v1, vertices[ other ], 1e-3f, 0.f ) ) {
+					if ( pointOnSegment<float>( v0, v1, vertices[ other ], 1e-3f, 0.f ) ) {
 						return deleteTrianglesIntersectingSegment_r( other, vIdx1, upperVertices, lowerVertices );			
 					}
 
@@ -807,13 +807,13 @@ namespace internal {
 				const Vector2f& triVi = vertices[ edge.vertices[ 0 ] ];
 				const Vector2f& triVj = vertices[ edge.vertices[ 1 ] ];
 
-				if ( PointOnSegment<float>( v0, v1, triVi, 1e-3f, 0.f ) ||
-					PointOnSegment<float>( v0, v1, triVj, 1e-3f, 0.f ) ) {
+				if ( pointOnSegment<float>( v0, v1, triVi, 1e-3f, 0.f ) ||
+					 pointOnSegment<float>( v0, v1, triVj, 1e-3f, 0.f ) ) {
 						continue;
 				}
 				// we now for certain that the segment is not parallel
 
-				if ( SegmentIntersect( v0, v1, triVi, triVj ) ) {
+				if ( segmentIntersect( v0, v1, triVi, triVj ) ) {
 					triEdge = e;
 					tri = v0Adjacents[ t ];
 
@@ -862,7 +862,7 @@ namespace internal {
 				upperVertices.append( vNext );
 				lowerVertices.append( vNext );
 			} else {
-				if ( PointOnSegment<float>( v0, v1, vertices[ vNext ] ) ) {
+				if ( pointOnSegment<float>( v0, v1, vertices[ vNext ] ) ) {
 					// vNext lies on the v0-v1 segment, dividing it into two
 					// so we'll now process the first half and make a recursive call
 					// to take care of the remaining half
@@ -888,7 +888,7 @@ namespace internal {
 						Edge_t edge = edges[ edgeIdx ];
 						const Vector2f& triVi = vertices[ edge.vertices[ 0 ] ];
 						const Vector2f& triVj = vertices[ edge.vertices[ 1 ] ];
-						assert( SegmentIntersect( v0, v1, triVi, triVj ) ); 
+						assert( segmentIntersect( v0, v1, triVi, triVj ) ); 
 #endif
 						continue;
 					}
@@ -896,7 +896,7 @@ namespace internal {
 					Edge_t edge = edges[ edgeIdx ];
 					const Vector2f& triVi = vertices[ edge.vertices[ 0 ] ];
 					const Vector2f& triVj = vertices[ edge.vertices[ 1 ] ];
-					if ( SegmentIntersect( v0, v1, triVi, triVj, 0 ) ) {
+					if ( segmentIntersect( v0, v1, triVi, triVj, 0 ) ) {
 						triEdge = e;			
 						assert( edge.vertices[ 0 ] == vNext || edge.vertices[ 1 ] == vNext );
 						break;
@@ -1044,8 +1044,8 @@ namespace internal {
 		}
 		assert( left.size() < indices.size() );
 		assert( right.size() < indices.size() );
-		if ( !PointOnSegment<float>( vertices[ indices[ 0 ] ], vertices[ indices[ indices.size() - 1 ] ], vertices[ indices[ splitPoint ] ] ) ) {
-			createTriangle( indices[ 0 ], indices[ splitPoint ], indices[ indices.size() - 1 ] ); 
+		if ( !pointOnSegment<float>( vertices[ indices[ 0 ] ], vertices[ indices[ indices.size() - 1 ] ], vertices[ indices[ splitPoint ] ] ) ) {
+			 createTriangle( indices[ 0 ], indices[ splitPoint ], indices[ indices.size() - 1 ] ); 
 		}
 
 		if ( left.size() >= 3 ) {
@@ -1079,7 +1079,7 @@ namespace internal {
 		const Vector2f ABperp( AB.y, -AB.x );
 		const Vector2f AP = P - A;
 		return ABperp * AP;*/
-		return RenderLib::Geometry::Signed2DTriangleArea( A, B, P );
+		return RenderLib::Geometry::signed2DTriangleArea( A, B, P );
 	}
 	
 	unsigned int AdjacencyInfo::createEdge( int v1, int v2 )
