@@ -27,7 +27,7 @@ namespace Math {
 		T m[4][4];
 	};
 
-#include "matrix4.inl"
+	#include "matrix4.inl"
 
 	typedef Matrix4<float> Matrix4f;
 	typedef Matrix4<double> Matrix4d;

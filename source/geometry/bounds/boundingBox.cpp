@@ -19,7 +19,7 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 	================================================================================
 */
-#include "geometry/bounds/boundingBox.h"
+#include <geometry/bounds/boundingBox.h>
 #include <float.h>
 #include <algorithm>
 #include <math/algebra/vector/vector3.h>

@@ -20,8 +20,8 @@
 	================================================================================
 */
 
-#include "dataStructs/photonMap/photonMap.h"
-#include "dataStructs/photonMap/photonMapKNN.h"
+#include <dataStructs/photonMap/photonMap.h>
+#include <dataStructs/photonMap/photonMapKNN.h>
 #include <memory.h>
 
 namespace RenderLib {

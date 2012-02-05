@@ -1,8 +1,8 @@
 #pragma once
-#include "math/algebra/point/point3.h"
-#include "geometry/bounds/boundingBox.h"
-#include "dataStructs/triangleSoup/triangleSoup.h"
-#include "raytracing/ray/ray.h"
+#include <math/algebra/point/point3.h>
+#include <geometry/bounds/boundingBox.h>
+#include <dataStructs/triangleSoup/triangleSoup.h>
+#include <raytracing/ray/ray.h>
 #include <malloc.h>
 #include <coreLib.h>
 

@@ -24,28 +24,28 @@
 
 /// Main header
 
-#include "math/constants.h"
+#include <math/constants.h>
 
-#include "math/algebra/matrix/matrix3.h"
-#include "math/algebra/matrix/matrix4.h"
-#include "math/algebra/matrix/matrix5.h"
-#include "math/algebra/point/point2.h"
-#include "math/algebra/point/point3.h"
-#include "math/algebra/vector/vector2.h"
-#include "math/algebra/vector/vector3.h"
+#include <math/algebra/matrix/matrix3.h>
+#include <math/algebra/matrix/matrix4.h>
+#include <math/algebra/matrix/matrix5.h>
+#include <math/algebra/point/point2.h>
+#include <math/algebra/point/point3.h>
+#include <math/algebra/vector/vector2.h>
+#include <math/algebra/vector/vector3.h>
 
-#include "math/sampling/random.h"
-#include "math/sampling/lowDiscrepancy.h"
+#include <math/sampling/random.h>
+#include <math/sampling/lowDiscrepancy.h>
 
-#include "geometry/bounds/boundingBox.h"
-#include "geometry/bounds/bounds2D.h"
-#include "geometry/intersection/intersection.h"
-#include "geometry/utils.h"
+#include <geometry/bounds/boundingBox.h>
+#include <geometry/bounds/bounds2D.h>
+#include <geometry/intersection/intersection.h>
+#include <geometry/utils.h>
 #include <geometry/tessellation/delaunay/delaunay2D.h>
 #include <geometry/tessellation/delaunay/delaunay3D.h>
 
-#include "dataStructs/photonMap/photonMap.h"
-#include "dataStructs/triangleSoup/triangleSoup.h"
-#include "dataStructs/kdtree/kdTree.h"
+#include <dataStructs/photonMap/photonMap.h>
+#include <dataStructs/triangleSoup/triangleSoup.h>
+#include <dataStructs/kdtree/kdTree.h>
 
-#include "raytracing/ray/ray.h"
+#include <raytracing/ray/ray.h>

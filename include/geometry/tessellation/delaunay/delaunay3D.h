@@ -58,7 +58,13 @@ namespace Delaunay {
 	//////////////////////////////////////////////////////////////////////////
 	// class Delaunay3D
 	//
-	// 3D Delaunay tessellation (tetrahedralization)
+	// 3D Delaunay tessellation (tetrahedralization).
+	//
+	// This class implements the algorithm described in 
+	//
+	// "Computing the 3D Voronoi Diagram Robustly: An Easy Explanation"
+	// Author: 	Hugo Ledoux 	Delft University of Technology, the Netherlands
+	// http://www.rgi-otb.nl/3dtopo/documents/RGI-011-56.pdf
 	//////////////////////////////////////////////////////////////////////////
 	
 	class Delaunay3D {

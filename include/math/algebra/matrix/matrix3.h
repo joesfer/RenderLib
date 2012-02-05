@@ -26,7 +26,7 @@ namespace Math {
 		T m[3][3];
 	};
 
-#include "matrix3.inl"
+	#include "matrix3.inl"
 
 	typedef Matrix3<float> Matrix3f;
 	typedef Matrix3<double> Matrix3d;

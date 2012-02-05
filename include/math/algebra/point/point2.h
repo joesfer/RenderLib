@@ -57,7 +57,7 @@ namespace Math {
 	typedef Point2<float>  Point2f;
 	typedef Point2<double> Point2d;
 
-#include "point2.inl"
+	#include "point2.inl"
 
 }
 }

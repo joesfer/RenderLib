@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "dataStructs/kdtree/kdTree.h"
+#include <dataStructs/kdtree/kdTree.h>
 #include <CoreLib.h>
 
 namespace RenderLib {

@@ -55,10 +55,10 @@ Compilation:
 		cd .build
 		cmake .. 
 		
-		Under windows: cmake will generate a Visual studio solution on .build
-		Under linux: cmake will generate a GCC makefile
+		On Windows: cmake will generate a Visual studio solution on .build
+		On Linux: cmake will generate a GCC makefile
 
-		Note that there is a dependency with CoreLib, which will be built first.
-		If everything went well, after building RenderLib a new folder structure 
-		<renderlib_folder>/lib/<build_type> containing the static library 
-		should have been generated.
+		Note that there is a dependency with CoreLib, which will be built 
+		first. If everything went well, after building RenderLib a new 
+		folder structure <renderlib_folder>/lib/<build_type> containing 
+		the static library should have been generated.

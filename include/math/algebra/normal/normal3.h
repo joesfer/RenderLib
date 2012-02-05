@@ -45,6 +45,6 @@ namespace Math {
 	typedef Normal3<float>  Normal3f;
 	typedef Normal3<double> Normal3d;
 
-	#include "Normal3.inl"
+	#include "normal3.inl"
 }
 }

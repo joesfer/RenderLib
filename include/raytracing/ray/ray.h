@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "math/algebra/point/point3.h"
-#include "math/algebra/vector/vector3.h"
+#include <math/algebra/point/point3.h>
+#include <math/algebra/vector/vector3.h>
 
 namespace RenderLib {
 namespace Raytracing {
