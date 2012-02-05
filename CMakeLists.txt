@@ -9,7 +9,7 @@ if(WIN32)
         add_definitions(-D_SCL_SECURE_NO_WARNINGS)
         add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 		add_definitions(-D NOMINMAX) # prevent windef.h min/max macros from interfering with stl's
-		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+		#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
     endif(MSVC)
 endif (WIN32)
 
@@ -27,19 +27,28 @@ function(create_source_group sourceGroupName relativeSourcePath)
 	endforeach(currentSourceFile ${ARGN})
 endfunction(create_source_group)
 
-file(GLOB_RECURSE RENDERLIB_SOURCES source/dataStructs/*.cpp source/geometry/*.cpp include/*.h include/*.inl)
-file(GLOB_RECURSE CORELIB_SOURCES source/CoreLib/*.cpp )
+
+file(GLOB_RECURSE RENDERLIB_SOURCES 
+	source/dataStructs/*.cpp 
+	source/geometry/*.cpp 
+	source/math/*.cpp 
+	source/include/*.h 
+	source/include/*.inl)
+file(GLOB_RECURSE CORELIB_SOURCES 
+	source/CoreLib/source/*.cpp 
+	source/CoreLib/include/*.h 
+	source/CoreLib/include/*.inl)
 
 # mimic disk folder structure on the project
-create_source_group( "" "${CMAKE_CURRENT_SOURCE_DIR}/source" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${RENDERLIB_SOURCES} )
+#create_source_group( "" "${CMAKE_CURRENT_SOURCE_DIR}/source" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${RENDERLIB_SOURCES} )
 
 # add base to include directories
 
-set( CORELIB_NAME "CoreLib" )
+set( CORE_LIB "CoreLib" )
 set( CORELIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/CoreLib/include CACHE STRING "path to CoreLib include folder" )
 set( CORELIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/source/CoreLib/lib CACHE STRING "path to CoreLib libray folder" )
 
-set( RENDERLIB_NAME "RenderLib" )
+set( RENDER_LIB "RenderLib" )
 set( RENDERLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE STRING "path to RenderLib include folder" )
 set( RENDERLIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/lib )
 
@@ -47,19 +56,20 @@ include_directories( ${RENDERLIB_INCLUDE_DIR} ${CORELIB_INCLUDE_DIR})
 #link_directories ( ${PUBLIC_LIBRARY_DIRS} ${CORELIB_OUTPUT_FOLDER})
 
 # Core Lib
-add_library(${CORELIB_NAME} STATIC ${CORELIB_SOURCES})
-set_target_properties( ${CORELIB_NAME} PROPERTIES PREFIX "" )
-set_target_properties( ${CORELIB_NAME} PROPERTIES OUTPUT_NAME ${CORELIB_NAME} )
-set_target_properties( ${CORELIB_NAME} PROPERTIES LINKER_LANGUAGE C )
-set_target_properties( ${CORELIB_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CORELIB_OUTPUT_FOLDER} )
+add_library(${CORE_LIB} STATIC ${CORELIB_SOURCES})
+set_target_properties( ${CORE_LIB} PROPERTIES PREFIX "" )
+set_target_properties( ${CORE_LIB} PROPERTIES OUTPUT_NAME ${CORE_LIB} )
+set_target_properties( ${CORE_LIB} PROPERTIES LINKER_LANGUAGE CXX )
+set_target_properties( ${CORE_LIB} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CORELIB_OUTPUT_FOLDER} )
 
 # Render Lib
 
-add_library(${RENDERLIB_NAME} STATIC ${RENDERLIB_SOURCES})
-target_link_libraries( ${RENDERLIB_NAME} ${CORELIB_OUTPUT_FOLDER}/${CORELIB_NAME})
+add_library(${RENDER_LIB} STATIC ${RENDERLIB_SOURCES})
+target_link_libraries( ${RENDER_LIB} ${CORE_LIB})
 
-set_target_properties( ${RENDERLIB_NAME} PROPERTIES PREFIX "" )
-set_target_properties( ${RENDERLIB_NAME} PROPERTIES OUTPUT_NAME ${RENDERLIB_NAME} )
-set_target_properties( ${RENDERLIB_NAME} PROPERTIES LINKER_LANGUAGE C )
-set_target_properties( ${RENDERLIB_NAME} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${RENDERLIB_OUTPUT_FOLDER} )
+set_target_properties( ${RENDER_LIB} PROPERTIES PREFIX "" )
+set_target_properties( ${RENDER_LIB} PROPERTIES OUTPUT_NAME ${RENDER_LIB} )
+set_target_properties( ${RENDER_LIB} PROPERTIES LINKER_LANGUAGE CXX )
+set_target_properties( ${RENDER_LIB} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${RENDERLIB_OUTPUT_FOLDER} )
 
+message(${CMAKE_CXX_FLAGS})
