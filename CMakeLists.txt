@@ -27,17 +27,16 @@ function(create_source_group sourceGroupName relativeSourcePath)
 	endforeach(currentSourceFile ${ARGN})
 endfunction(create_source_group)
 
+file(GLOB_RECURSE CORELIB_SOURCES 
+	CoreLib/*.cpp 
+	CoreLib/include/*.h 
+	CoreLib/include/*.inl)
 
 file(GLOB_RECURSE RENDERLIB_SOURCES 
-	source/dataStructs/*.cpp 
-	source/geometry/*.cpp 
-	source/math/*.cpp 
-	source/include/*.h 
-	source/include/*.inl)
-file(GLOB_RECURSE CORELIB_SOURCES 
-	source/CoreLib/source/*.cpp 
-	source/CoreLib/include/*.h 
-	source/CoreLib/include/*.inl)
+	source/*.cpp 
+	include/*.h 
+	include/*.inl)
+
 
 # mimic disk folder structure on the project
 #create_source_group( "" "${CMAKE_CURRENT_SOURCE_DIR}/source" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${RENDERLIB_SOURCES} )
@@ -45,8 +44,8 @@ file(GLOB_RECURSE CORELIB_SOURCES
 # add base to include directories
 
 set( CORE_LIB "CoreLib" )
-set( CORELIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/CoreLib/include CACHE STRING "path to CoreLib include folder" )
-set( CORELIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/source/CoreLib/lib CACHE STRING "path to CoreLib libray folder" )
+set( CORELIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CoreLib/include CACHE STRING "path to CoreLib include folder" )
+set( CORELIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/CoreLib/lib CACHE STRING "path to CoreLib libray folder" )
 
 set( RENDER_LIB "RenderLib" )
 set( RENDERLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE STRING "path to RenderLib include folder" )
