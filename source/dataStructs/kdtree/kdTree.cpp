@@ -1,6 +1,3 @@
-#include "precompiled.h"
-#pragma hdrstop
-
 #include <assert.h>
 #include "dataStructs/kdtree/kdTree.h"
 #include <CoreLib.h>
