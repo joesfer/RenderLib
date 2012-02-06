@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 2.6)
 
 project(RenderLib)
 
+
+set( CORE_LIB "CoreLib" )
+set( CORELIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../CoreLib/include CACHE STRING "path to CoreLib include folder" )
+set( CORELIB_LIB_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/../CoreLib/lib CACHE STRING "path to CoreLib libray folder" )
+
+set( RENDER_LIB "RenderLib" )
+set( RENDERLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE STRING "path to RenderLib include folder" )
+set( RENDERLIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/lib )
+
+
 # Platform specific definitions
 if(WIN32)
     if(MSVC)
@@ -28,9 +38,9 @@ function(create_source_group sourceGroupName relativeSourcePath)
 endfunction(create_source_group)
 
 file(GLOB_RECURSE CORELIB_SOURCES 
-	CoreLib/*.cpp 
-	CoreLib/include/*.h 
-	CoreLib/include/*.inl)
+	${CORELIB_INCLUDE_DIR}/*.cpp 
+	../CoreLib/include/*.h 
+	../CoreLib/include/*.inl)
 
 file(GLOB_RECURSE RENDERLIB_SOURCES 
 	source/*.cpp 
@@ -43,23 +53,16 @@ file(GLOB_RECURSE RENDERLIB_SOURCES
 
 # add base to include directories
 
-set( CORE_LIB "CoreLib" )
-set( CORELIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CoreLib/include CACHE STRING "path to CoreLib include folder" )
-set( CORELIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/CoreLib/lib CACHE STRING "path to CoreLib libray folder" )
-
-set( RENDER_LIB "RenderLib" )
-set( RENDERLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE STRING "path to RenderLib include folder" )
-set( RENDERLIB_OUTPUT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/lib )
-
 include_directories( ${RENDERLIB_INCLUDE_DIR} ${CORELIB_INCLUDE_DIR})
-#link_directories ( ${PUBLIC_LIBRARY_DIRS} ${CORELIB_OUTPUT_FOLDER})
 
 # Core Lib
-add_library(${CORE_LIB} STATIC ${CORELIB_SOURCES})
-set_target_properties( ${CORE_LIB} PROPERTIES PREFIX "" )
-set_target_properties( ${CORE_LIB} PROPERTIES OUTPUT_NAME ${CORE_LIB} )
-set_target_properties( ${CORE_LIB} PROPERTIES LINKER_LANGUAGE CXX )
-set_target_properties( ${CORE_LIB} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CORELIB_OUTPUT_FOLDER} )
+
+add_library(${CORE_LIB} STATIC IMPORTED)
+if(WIN32)
+	set_property( TARGET ${CORE_LIB} PROPERTY IMPORTED_LOCATION ${CORELIB_LIB_FOLDER}/${CORE_LIB}.lib )
+else(WIN32)
+	set_property( TARGET ${CORE_LIB} PROPERTY IMPORTED_LOCATION ${CORELIB_LIB_FOLDER}/${CORE_LIB}.a )
+endif(WIN32)
 
 # Render Lib
 
@@ -70,5 +73,3 @@ set_target_properties( ${RENDER_LIB} PROPERTIES PREFIX "" )
 set_target_properties( ${RENDER_LIB} PROPERTIES OUTPUT_NAME ${RENDER_LIB} )
 set_target_properties( ${RENDER_LIB} PROPERTIES LINKER_LANGUAGE CXX )
 set_target_properties( ${RENDER_LIB} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${RENDERLIB_OUTPUT_FOLDER} )
-
-message(${CMAKE_CXX_FLAGS})

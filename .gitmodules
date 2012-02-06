@@ -1,5 +1,0 @@
-[submodule "CoreLib"]
-
-	path = CoreLib
-
-	url = git://github.com/joesfer/CoreLib.git

@@ -30,35 +30,41 @@ License:
 	
 Compilation:
 
-	- Clone the git repository into a local folder:
+	- RenderLib depends on CoreLib, so we'll build it first:
 
-		mkdir <renderlib_folder>
-		cd <renderlib_folder>
-		git clone git://github.com/joesfer/RenderLib.git 
+		mkdir <parent_folder>/<corelib_folder>
+		cd <parent_folder>/<corelib_folder>
+		git clone git://github.com/joesfer/CoreLib.git 
 
-	- The project depends on the CoreLib library, included as a submodule.
-	
-		in <renderlib_folder>
-		git submodule init
-		git submodule update
-		
-		git should print "Cloning into 'src/CoreLib'..."
-		Otherwise, add it manually by doing:
-		
-		git submodule add git://github.com/joesfer/CoreLib.git source/CoreLib
-		git submodule update
-		
-	- Build RenderLib
-	
-		cd <renderlib_folder>
 		mkdir .build
 		cd .build
 		cmake .. 
 		
 		On Windows: cmake will generate a Visual studio solution on .build
 		On Linux: cmake will generate a GCC makefile
+		
+		build the generated makefile/solution. If the compilation 
+		succeeded, a static library should have been generated under
+		<parent_folder>/<corelib_folder>/lib/<build_type>
 
-		Note that there is a dependency with CoreLib, which will be built 
-		first. If everything went well, after building RenderLib a new 
-		folder structure <renderlib_folder>/lib/<build_type> containing 
-		the static library should have been generated.
+	- Now we'll build RenderLib:
+
+		mkdir <parent_folder>/<renderlib_folder>
+		cd <parent_folder>/<renderlib_folder>
+		git clone git://github.com/joesfer/RenderLib.git 
+
+		mkdir .build
+		cd .build
+		cmake .. 
+
+		Note that by default, CoreLib is expected to be in <parent_folder>
+		(that is, at the same level as RenderLib). However, this can be
+		changed by setting the CORELIB_INCLUDE_DIR and CORELIB_LIB_DIR
+		variables when calling CMake.
+		
+		On Windows: cmake will generate a Visual studio solution on .build
+		On Linux: cmake will generate a GCC makefile
+		
+		build the generated makefile/solution. If the compilation 
+		succeeded, a static library should have been generated under
+		<parent_folder>/<renderlib_folder>/lib/<build_type>
