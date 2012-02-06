@@ -42,7 +42,7 @@ namespace Geometry {
 	// ================================================================================================
 	template< typename T >
 	T BarycentricTriangleArea( const RenderLib::Math::Normal3<T> &normal, const RenderLib::Math::Point3<T> &a, const RenderLib::Math::Point3<T> &b, const RenderLib::Math::Point3<T> &c ) {
-
+                using namespace RenderLib::Math;
 		Vector3<T>	v1, v2;
 		Vector3<T>	cross;
 		T	area;
@@ -141,22 +141,22 @@ namespace Geometry {
 		using namespace RenderLib::Math;
 
 		const float a = Matrix3< T >( p0.x, p0.y, 1, 
-												 p1.x, p1.y, 1,
-												 p2.x, p2.y, 1 ).determinant();
+                                              p1.x, p1.y, 1,
+                                              p2.x, p2.y, 1 ).determinant();
 		if ( abs( a ) < 1e-5 ) {
 			return false;
 		}
 		const float d = -Matrix3< T >( p0.x * p0.x + p0.y * p0.y, p0.y, 1, 
-												  p1.x * p1.x + p1.y * p1.y, p1.y, 1,
-												  p2.x * p2.x + p2.y * p2.y, p2.y, 1 ).determinant();
+                                               p1.x * p1.x + p1.y * p1.y, p1.y, 1,
+                                               p2.x * p2.x + p2.y * p2.y, p2.y, 1 ).determinant();
 
 		const float e = Matrix3< T >( p0.x * p0.x + p0.y * p0.y, p0.x, 1, 
-												 p1.x * p1.x + p1.y * p1.y, p1.x, 1,
-												 p2.x * p2.x + p2.y * p2.y, p2.x, 1 ).determinant();
+                                              p1.x * p1.x + p1.y * p1.y, p1.x, 1,
+                                              p2.x * p2.x + p2.y * p2.y, p2.x, 1 ).determinant();
 
 		const float f = -Matrix3< T >( p0.x * p0.x + p0.y * p0.y, p0.x, p0.y, 
-												  p1.x * p1.x + p1.y * p1.y, p1.x, p1.y,
-												  p2.x * p2.x + p2.y * p2.y, p2.x, p2.y ).determinant();
+                                               p1.x * p1.x + p1.y * p1.y, p1.x, p1.y,
+                                               p2.x * p2.x + p2.y * p2.y, p2.x, p2.y ).determinant();
 
 		center.x = - d / ( 2 * a );
 		center.y = - e / ( 2 * a );
@@ -179,9 +179,9 @@ namespace Geometry {
 	{
 		using namespace RenderLib::Math;
 		const float det = Matrix4<T>( a.x, a.y, a.x * a.x + a.y * a.y, 1, 
-									  b.x, b.y, b.x * b.x + b.y * b.y, 1,
-									  c.x, c.y, c.x * c.x + c.y * c.y, 1,
-									  p.x, p.y, p.x * p.x + p.y * p.y, 1 ).determinant();
+                                              b.x, b.y, b.x * b.x + b.y * b.y, 1,
+                                              c.x, c.y, c.x * c.x + c.y * c.y, 1,
+                                              p.x, p.y, p.x * p.x + p.y * p.y, 1 ).determinant();
 		if ( Orient<T>( a, b, c ) > 0 ) {
 			return det;
 		} else {

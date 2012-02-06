@@ -73,8 +73,8 @@ namespace Geometry {
 
 	template<typename T>
 	inline bool segmentTriangleIntersect_SingleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
-													  const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c, 
-													  float& t, float& v, float& w ) {
+                                                          const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c,
+                                                          float& t, float& v, float& w ) {
 		using namespace RenderLib::Math;
 
 		Vector3<T> ab = b - a;

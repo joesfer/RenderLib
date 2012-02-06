@@ -24,6 +24,7 @@
 #include <geometry/intersection/intersection.h>
 #include <geometry/bounds/bounds2D.h>
 #include <geometry/utils.h>
+#include <climits>
 
 namespace RenderLib {
 namespace Geometry {
@@ -647,7 +648,7 @@ namespace internal {
 			// The resulting triangles would not improve the triangulation, don't bother
 			return false;
 		}
-		const float closestAngleBefore = __min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
+                const float closestAngleBefore = std::min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
 
 		//assert( triangles[ tri1 ].insideCircumcircle( vertices[ D ], vertices ) > Delaunay::internal::INSIDE_CIRCUMCIRCLE_EPSILON );
 		//assert( triangles[ tri2 ].insideCircumcircle( vertices[ A ], vertices ) > Delaunay::internal::INSIDE_CIRCUMCIRCLE_EPSILON);
@@ -696,7 +697,7 @@ namespace internal {
 
 #endif
 
-		const float closestAngleAfter = __min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
+                const float closestAngleAfter = std::min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
 
 		//assert( closestAngleBefore <= closestAngleAfter );
 #if _DEBUG
@@ -710,8 +711,8 @@ namespace internal {
 
 	bool AdjacencyInfo::worthFlipping( int A, int B, int C, int D ) const
 	{
-		const float closestAngleBefore = __min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
-		const float closestAngleAfter = __min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
+                const float closestAngleBefore = std::min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
+                const float closestAngleAfter = std::min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
 
 		return closestAngleBefore < closestAngleAfter;
 	}

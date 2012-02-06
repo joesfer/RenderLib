@@ -23,6 +23,7 @@
 #include <dataStructs/photonMap/photonMap.h>
 #include <dataStructs/photonMap/photonMapKNN.h>
 #include <memory.h>
+#include <malloc.h>
 
 namespace RenderLib {
 namespace DataStructures {

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <memory.h>
 #include <dataStructs/kdtree/kdTree.h>
 #include <CoreLib.h>
 

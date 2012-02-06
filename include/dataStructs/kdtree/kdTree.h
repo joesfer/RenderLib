@@ -1,6 +1,8 @@
 #pragma once
 #include <math/algebra/point/point3.h>
 #include <geometry/bounds/boundingBox.h>
+#include <geometry/intersection/intersection.h>
+#include <geometry/utils.h>
 #include <dataStructs/triangleSoup/triangleSoup.h>
 #include <raytracing/ray/ray.h>
 #include <malloc.h>
