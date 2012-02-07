@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <CoreLib.h>
+#include <coreLib.h>
 #include <assert.h>
 #include <stack>
 #include <math/algebra/point/point2.h>
