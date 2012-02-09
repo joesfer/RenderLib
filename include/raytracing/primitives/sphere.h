@@ -22,31 +22,23 @@
 
 #pragma once
 
-/// Main header
-
-#include <math/constants.h>
-
-#include <math/algebra/matrix/matrix3.h>
-#include <math/algebra/matrix/matrix4.h>
-#include <math/algebra/matrix/matrix5.h>
-#include <math/algebra/point/point2.h>
 #include <math/algebra/point/point3.h>
-#include <math/algebra/vector/vector2.h>
-#include <math/algebra/vector/vector3.h>
-
-#include <math/sampling/random.h>
-#include <math/sampling/lowDiscrepancy.h>
-
-#include <geometry/bounds/boundingBox.h>
-#include <geometry/bounds/bounds2D.h>
-#include <geometry/intersection/intersection.h>
-#include <geometry/utils.h>
-#include <geometry/tessellation/delaunay/delaunay2D.h>
-#include <geometry/tessellation/delaunay/delaunay3D.h>
-
-#include <dataStructs/photonMap/photonMap.h>
-#include <dataStructs/triangleSoup/triangleSoup.h>
-#include <dataStructs/kdtree/kdTree.h>
-#include <dataStructs/bvh/bvh.h>
-
 #include <raytracing/ray/ray.h>
+
+namespace RenderLib {
+namespace Raytracing {
+	
+class Sphere {
+public:
+    Sphere() : m_radius(0) {}
+	Sphere( const RenderLib::Math::Point3f& c, float r ) : m_center(c), m_radius(r) {}
+	static Sphere from3Points(const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c);
+
+	bool intersection(const RenderLib::Raytracing::Ray& r, float& isectT ) const;
+
+    RenderLib::Math::Point3f m_center;
+    float m_radius;
+};
+
+} // namespace Raytracing
+} // namespace RenderLib

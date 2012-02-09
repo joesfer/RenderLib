@@ -136,7 +136,7 @@ namespace Geometry {
 	// Calculate the circle that passes through 3 coplanar points
 	// http://mathworld.wolfram.com/Circle.html
 	template< typename T >
-	bool CircleFrom3Points( const RenderLib::Math::Point2<T>& p0, const RenderLib::Math::Point2<T>& p1, const RenderLib::Math::Point2<T>& p2,
+	bool circleFrom3Points( const RenderLib::Math::Point2<T>& p0, const RenderLib::Math::Point2<T>& p1, const RenderLib::Math::Point2<T>& p2,
 							RenderLib::Math::Point2<T>& center, T& radius ) {
 		using namespace RenderLib::Math;
 
@@ -162,6 +162,45 @@ namespace Geometry {
 		center.y = - e / ( 2 * a );
 		radius = sqrt( ( d * d + e * e ) / ( 4 * a * a ) - f / a );
 
+		return true;
+	}
+
+	// Calculate the sphere which equator passes through 3 coplanar points
+	template< typename T >
+	bool sphereFrom3Points( const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c,
+							RenderLib::Math::Point3<T>& center, T& radius ) {
+		using namespace RenderLib::Math;
+
+		// project points to a plane
+		const Vector3<T> ab = Vector3<T>::normalize(b-a);
+		const Vector3<T> ac = Vector3<T>::normalize(c-a);
+		const Vector3<T> planeNormal = Vector3<T>::cross(ab,ac);
+		const Vector3<T>& planeOX = ab;
+		const Vector3<T> planeOY = Vector3<T>::normalize(Vector3<T>::cross(planeOX, planeNormal)); // renormalize to correct imprecissions
+
+		Point2<T> projA(0,0);
+		Point2<T> projB( Vector3<T>::dot(planeOX, b - a), Vector3<T>::dot(planeOY, b - a));
+		Point2<T> projC( Vector3<T>::dot(planeOX, c - a), Vector3<T>::dot(planeOY, c - a));
+
+		// find circle passing through projected points
+		Point2<T> projCenter; float projRadius;
+		if (!circleFrom3Points( projA, projB, projC, projCenter, projRadius )) return false;
+#ifdef DEBUG
+		assert( fabsf((projCenter - projA ).length() - projRadius) < 1e-3f );
+#endif
+		// define sphere from circle
+		center = a + planeOX * projCenter.x + planeOY * projCenter.y;
+		radius = projRadius;
+
+#ifdef DEBUG
+		// debug sanity check //
+		float fa = fabsf((center - a ).length() - radius );
+		float fb = fabsf((center - b ).length() - radius );
+		float fc = fabsf((center - c ).length() - radius );
+		assert( fabsf((center - a ).length() - radius) < 1e-2f );
+		assert( fabsf((center - b ).length() - radius) < 1e-2f );
+		assert( fabsf((center - c ).length() - radius) < 1e-2f );
+#endif
 		return true;
 	}
 	
