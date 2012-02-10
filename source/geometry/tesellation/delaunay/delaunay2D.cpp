@@ -386,10 +386,10 @@ namespace internal {
 			const int edgeIndex = triangle.edges[ i ];
 			Edge_t& edge = edges[ abs( edgeIndex ) - 1 ];
 			if ( edgeIndex < 0 ) {
-				assert( edge.triangles[ 1 ] == t );
+				assert( edge.triangles[ 1 ] == (int)t );
 				edge.triangles[ 1 ] = -1;
 			} else {
-				assert( edge.triangles[ 0 ] == t );
+				assert( edge.triangles[ 0 ] == (int)t );
 				edge.triangles[ 0 ] = -1;
 			}
 			/*if ( edge.triangles[ 0 ] < 0 && edge.triangles[ 1 ] < 0 ) {
@@ -648,8 +648,8 @@ namespace internal {
 			// The resulting triangles would not improve the triangulation, don't bother
 			return false;
 		}
-                const float closestAngleBefore = std::min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
 
+        //const float closestAngleBefore = std::min( closestAngleOnTriangle( A, B, C ), closestAngleOnTriangle( A, D, C ) );
 		//assert( triangles[ tri1 ].insideCircumcircle( vertices[ D ], vertices ) > Delaunay::internal::INSIDE_CIRCUMCIRCLE_EPSILON );
 		//assert( triangles[ tri2 ].insideCircumcircle( vertices[ A ], vertices ) > Delaunay::internal::INSIDE_CIRCUMCIRCLE_EPSILON);
 
@@ -697,8 +697,7 @@ namespace internal {
 
 #endif
 
-                const float closestAngleAfter = std::min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
-
+		//const float closestAngleAfter = std::min( closestAngleOnTriangle( A, B, D ), closestAngleOnTriangle( A, D, C ) );
 		//assert( closestAngleBefore <= closestAngleAfter );
 #if _DEBUG
 		//if ( closestAngleBefore < closestAngleAfter ) { // if the angles are the same it means both triangles have their vertices on the same circumcircle
@@ -1285,15 +1284,15 @@ namespace internal {
 	}
 
 	bool constrainedDelaunay2D( const LIST( RenderLib::Math::Vector2f )& vertices, 
-		const LIST( int )& edges, 
-		LIST(int)* outTriangles, 
-		AdjacencyInfo* adjacencyInfo ) {
+								const LIST( int )& edges, 
+								LIST(int)* outTriangles, 
+								AdjacencyInfo* adjacencyInfo ) {
 			AdjacencyInfo* adjacency = adjacencyInfo;
 			if ( adjacencyInfo == NULL ) {
 				adjacency = new AdjacencyInfo;
 			}
 
-			if ( !delaunay2D( vertices, NULL, adjacency ) ) {
+			if ( !delaunay2D( vertices, outTriangles, adjacency ) ) {
 				return false;
 			}
 
