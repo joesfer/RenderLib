@@ -42,11 +42,11 @@ private:
 
     class BVHNode {
     public:
-        bool m_leaf;
-        int m_volumeIndex; // index in m_volumes
+        bool leaf;
+        int volumeIndex; // index in volumes
         union {
-            int m_primitiveIndex; // for leaves
-            int m_leftChildIndex; // index in m_nodes array: rightChild = leftChild + 1
+            int primitiveIndex; // for leaves
+            int leftChildIndex; // index in nodes array: rightChild = leftChild + 1
         };
     };
 
@@ -64,8 +64,8 @@ private:
                         int node,
                         RenderLib::Math::Vector3f& isect ) const;
 
-    std::vector<BVHNode> m_nodes;
-    std::vector<RenderLib::Raytracing::Sphere> m_volumes;
+    std::vector<BVHNode> nodes;
+    std::vector<RenderLib::Raytracing::Sphere> volumes;
 };
 
 } // namespace DataStructures

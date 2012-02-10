@@ -21,7 +21,9 @@
 */
 
 #include <geometry/intersection/intersection.h>
+#include <geometry/utils.h>
 #include <math/algebra/vector/vector2.h>
+#include <raytracing/primitives/sphere.h>
 
 namespace RenderLib {
 namespace Geometry {
@@ -67,5 +69,45 @@ namespace Geometry {
 
 	}
 
+	// This expects triangles in CCW order
+	bool segmentTriIntersection( const RenderLib::Math::Point3f& p, const RenderLib::Math::Point3f& q,
+		const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c,
+		RenderLib::Math::Vector3f& isect) {
+			using namespace RenderLib::Math;
+			using namespace RenderLib::Raytracing;
+			using namespace RenderLib::Geometry;
+
+			const Point3f pq = q - p;
+			const Point3f pa = a - p;
+			const Point3f pb = b - p;
+			const Point3f pc = c - p;
+
+			// test if pq is inside the edges bc, ca and ab. Done by testing
+			// that the signed tetrahedral volumes, computed using scalar triple
+			// products, are all positive
+			float u = scalarTriple(pq, pc, pb);
+			if (u < 0.0f) return false;
+			float v = scalarTriple(pq, pa, pc);
+			if (v < 0.0f) return false;
+			float w = scalarTriple(pq, pb, pa);
+			if (w < 0.0f) return false;
+
+			u = std::max(u, 0.0f);
+			v = std::max(v, 0.0f);
+			w = std::max(w, 0.0f);
+
+			// compute the varycentric coordinates determining the
+			// intersection point, r
+			float denom = 1.0f / (u+v+w);
+			u *= denom;
+			v *= denom;
+			w *= denom;
+			assert( fabsf(w - 1.0f + u + v ) < 1e-3f );
+			assert( u >= 0.0f && u <= 1.0f );
+			assert( v >= 0.0f && v <= 1.0f );
+			assert( w >= 0.0f && w <= 1.0f );
+			isect = a.fromOrigin() * u + b.fromOrigin() * v + c.fromOrigin() * w;
+			return true;
+	}
 }
 }

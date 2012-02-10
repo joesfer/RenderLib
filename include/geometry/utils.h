@@ -228,5 +228,8 @@ namespace Geometry {
 		}
 	}
 
+	inline float scalarTriple( const RenderLib::Math::Point3f& u, const RenderLib::Math::Point3f& v, const RenderLib::Math::Point3f& w ) {
+		return RenderLib::Math::Vector3f::dot(RenderLib::Math::Vector3f::cross(u.fromOrigin(),v.fromOrigin()), w.fromOrigin());
+	}
 }
 }

@@ -159,5 +159,17 @@ namespace Geometry {
 		return segmentTriangleIntersect_DoubleSided<T>( p, dir, -lengthEpsilon, maxT + lengthEpsilon, a, b, c, t, v, w, epsilon );
 	}
 
+
+	////////////////////////////////////////////////////////////////////////////
+	// segmentTriIntersection
+	//
+	// An alternative version of segmentTriangleIntersect_SingleSided which
+	// returns the intersection point instead of the barycentric coordinates
+	// 
+	// This function expects triangles in CCW order
+	bool segmentTriIntersection( const RenderLib::Math::Point3f& p, const RenderLib::Math::Point3f& q,
+		const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c,
+		RenderLib::Math::Vector3f& isect);
+
 } // namespace Geometry
 } // namespace RenderLib

@@ -28,16 +28,16 @@ namespace Raytracing {
 
 Sphere Sphere::from3Points(const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c) {
 	Sphere s;
-	RenderLib::Geometry::sphereFrom3Points(a, b, c, s.m_center, s.m_radius);
+	RenderLib::Geometry::sphereFrom3Points(a, b, c, s.center, s.radius);
     return s;
 }
 
 // Realtime Collision Detection. page 178
 bool Sphere::intersection(const RenderLib::Raytracing::Ray& r, float& isectT ) const {
 	using namespace RenderLib::Math;
-	Vector3f m = r.origin - m_center;
+	Vector3f m = r.origin - center;
 	float b = Vector3f::dot(m, r.direction);
-    float c = Vector3f::dot(m, m) - m_radius * m_radius;
+    float c = Vector3f::dot(m, m) - radius * radius;
     // Exit if the ray origin is outside the sphere and the direction is pointing away from it
     if ( c > 0.0f && b > 0.0f ) return false;
     float discr = b*b - c;

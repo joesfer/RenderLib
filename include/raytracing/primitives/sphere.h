@@ -30,14 +30,14 @@ namespace Raytracing {
 	
 class Sphere {
 public:
-    Sphere() : m_radius(0) {}
-	Sphere( const RenderLib::Math::Point3f& c, float r ) : m_center(c), m_radius(r) {}
+    Sphere() : radius(0) {}
+	Sphere( const RenderLib::Math::Point3f& c, float r ) : center(c), radius(r) {}
 	static Sphere from3Points(const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c);
 
 	bool intersection(const RenderLib::Raytracing::Ray& r, float& isectT ) const;
 
-    RenderLib::Math::Point3f m_center;
-    float m_radius;
+    RenderLib::Math::Point3f center;
+    float radius;
 };
 
 } // namespace Raytracing
