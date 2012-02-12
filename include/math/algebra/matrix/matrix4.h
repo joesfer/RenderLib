@@ -22,6 +22,8 @@
 
 #pragma once
 #include <memory.h>
+#include <math/algebra/vector/vector3.h>
+#include <math/algebra/point/point3.h>
 
 namespace RenderLib {
 namespace Math {
@@ -40,11 +42,21 @@ namespace Math {
 
 		// Operators ///
 
-		Matrix4<T> transposed() const;
-		Matrix4<T>& transpose();
+		Matrix4 transposed() const;
+		Matrix4& transpose();
+
+		Matrix4 inverse() const;
+		Matrix4& invert();
+
+		Matrix4 operator * (const Matrix4& M ) const;
 
 		// Methods ///
 		T determinant() const;
+		Vector3<T> transform(const Vector3<T>& v) const;
+		Point3<T> transform(const Point3<T>& p) const;
+
+		static Matrix4 rotationFromAngles(float yaw, float pitch, float roll);
+		void toAngles(float& yaw, float& pitch, float& roll) const;
 
 	public:
 		T m[4][4];
