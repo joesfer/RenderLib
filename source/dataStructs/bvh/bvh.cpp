@@ -46,7 +46,7 @@ BVH::BVH(const std::vector<RenderLib::Math::Vector3f> &vertices, const std::vect
     } else {
         vector<int> primitives;
         primitives.reserve(numPrimitives);
-        for( size_t i = 0; i < numPrimitives; i++ ) primitives.push_back(i);
+        for( size_t i = 0; i < numPrimitives; i++ ) primitives.push_back((int)i);
         split(0, vertices, indices, centroids, primitives, bounds);
     }
 }
@@ -120,16 +120,16 @@ void BVH::split( size_t nodeIndex,
             // create left child
             BVHNode leftChild;
             Sphere leftSphere( leftBounds.center(), (leftBounds.center() - leftBounds.min()).length() );
-            leftChild.volumeIndex = volumes.size();
+            leftChild.volumeIndex = (int)volumes.size();
             volumes.push_back(leftSphere);
 
             // create right child
             BVHNode rightChild;
             Sphere rightSphere( rightBounds.center(), (rightBounds.center() - rightBounds.min()).length() );
-            rightChild.volumeIndex = volumes.size();
+            rightChild.volumeIndex = (int)volumes.size();
             volumes.push_back(rightSphere);
 
-            node.leftChildIndex = nodes.size();
+            node.leftChildIndex = (int)nodes.size();
             leftChildIndex = node.leftChildIndex;
             rightChildIndex = leftChildIndex + 1;
             nodes.push_back(leftChild);

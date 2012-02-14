@@ -579,7 +579,7 @@ namespace internal {
 		const CoreLib::List< Point >& vertices,
 		unsigned int resultingTetrahedra[4] ) {
 
-		tetrahedron_t srcT = tetrahedra[ tetrahedron ];
+		tetrahedron_t srcT = tetrahedra[ (int)tetrahedron ];
 		assert( Tetrahedron::checkFaceOrientations( srcT, vertices ) );
 
 		assert( Tetrahedron::checkNeighbors( srcT, tetrahedron, tetrahedra, vertices ) );
@@ -597,11 +597,11 @@ namespace internal {
 		const unsigned int iResT1 = tetrahedron; // reuse the source tetrahedron slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
 		Tetrahedron::destroy( resT1, tetrahedra );
-		const unsigned int iResT2 = tetrahedra.size(); 
+		const unsigned int iResT2 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT2 = tetrahedra.append();
-		const unsigned int iResT3 = tetrahedra.size(); 
+		const unsigned int iResT3 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT3 = tetrahedra.append();
-		const unsigned int iResT4 = tetrahedra.size(); 
+		const unsigned int iResT4 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT4 = tetrahedra.append();
 
 		assert( !resT1.isValid() );
@@ -748,7 +748,7 @@ namespace internal {
 		const unsigned int iResT2 = tetrahedron2; // reuse the source tetrahedron2 slot
 		tetrahedron_t& resT2 = tetrahedra[ iResT2 ];
 		Tetrahedron::destroy( resT2, tetrahedra );
-		const unsigned int iResT3 = tetrahedra.size(); 
+		const unsigned int iResT3 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT3 = tetrahedra.append();
 
 		assert( !resT1.isValid() );
@@ -1456,7 +1456,7 @@ namespace internal {
 				bool found = false;
 				for( size_t i = 0; i < visited.size(); i++ ) {
 					if ( !visited[ i ] ) {
-						t = i;
+						t = (int)i;
 						found = true;
 						break;
 					}
@@ -1981,7 +1981,7 @@ bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
 
 									tetrahedra.setGranularity( 4 * numSrcPoints );
 									for( size_t i = 0; i < numSrcPoints; i++ ) {
-										internal::insertOnePoint( pointSet, i, tetrahedra );
+										internal::insertOnePoint( pointSet, (int)i, tetrahedra );
 									}
 #if _DEBUG
 									// verify Delaunay condition (empty spheres) for all tetrahedra

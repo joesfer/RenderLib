@@ -43,7 +43,7 @@ namespace internal {
 										LIST(int)* outTriangles, 
 										const LIST( RenderLib::Math::Vector2f )& vertices ) {
 		// remove triangles containing vertices from the supertriangle
-		for( size_t i = 0; i < adjacency->triangles.size(); i++ ) {
+		for( int i = 0; i < (int)adjacency->triangles.size(); i++ ) {
 			const AdjacencyInfo::Triangle_t& triangle = adjacency->triangles[ i ];
 			if ( !triangle.valid ) {
 				continue;
@@ -69,7 +69,7 @@ namespace internal {
 			}
 		}
 
-		for( size_t i = 0; i < adjacency->triangles.size(); i++ ) {
+		for( int i = 0; i < (int)adjacency->triangles.size(); i++ ) {
 			if ( !adjacency->triangles[ i ].valid ) {
 				const int remappedTriangle = (int)adjacency->triangles.size() - 1;
 				adjacency->triangles.removeIndexFast( i );
@@ -131,9 +131,9 @@ namespace internal {
 			st3.x = center.x + 2.0f * radius * cosf( (float)DEG2RAD(240.0) );
 			st3.y = center.y + 2.0f * radius * sinf( (float)DEG2RAD(240.0) );
 
-			stIdx1 = adjacency->vertices.size() - 3;
-			stIdx2 = adjacency->vertices.size() - 2;
-			stIdx3 = adjacency->vertices.size() - 1;
+			stIdx1 = (int)adjacency->vertices.size() - 3;
+			stIdx2 = (int)adjacency->vertices.size() - 2;
+			stIdx3 = (int)adjacency->vertices.size() - 1;
 
 			adjacency->createTriangle( stIdx1, stIdx2, stIdx3 );
 	}
@@ -339,7 +339,7 @@ namespace internal {
 #endif
 		int triangleIndex;
 		if ( invalidTriangles.empty() ) {
-			triangleIndex = triangles.size();
+			triangleIndex = (int)triangles.size();
 			triangles.append();
 		} else {
 			triangleIndex = invalidTriangles[ 0 ];
@@ -351,9 +351,9 @@ namespace internal {
 		triangle.vertices[ 2 ] = c;
 
 		if ( !vertexTriangleAdjacencyInfo.empty() ) {
-			vertexTriangleAdjacencyInfo[ a ].append( triangleIndex );
-			vertexTriangleAdjacencyInfo[ b ].append( triangleIndex );
-			vertexTriangleAdjacencyInfo[ c ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)a ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)b ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)c ].append( triangleIndex );
 		}
 
 
@@ -379,7 +379,7 @@ namespace internal {
 
 	void AdjacencyInfo::removeTriangle( unsigned int t )
 	{
-		Triangle_t& triangle = triangles[ t ];
+		Triangle_t& triangle = triangles[ (size_t)t ];
 		assert( triangle.valid );
 
 		for( int i = 0; i < 3; i++ ) {
@@ -439,7 +439,7 @@ namespace internal {
 			}
 
 			if ( hit ) {
-				return i;
+				return (int)i;
 			}
 		}
 		return -1;
@@ -743,7 +743,7 @@ namespace internal {
 		for( size_t t = 0; t < triangles.size(); t++ ) {
 			Triangle_t& tri = triangles[ t ];
 			for( int v = 0; v < 3; v++ ) {
-				vertexTriangleAdjacencyInfo[ tri.vertices[ v ] ].append( t );
+				vertexTriangleAdjacencyInfo[ tri.vertices[ v ] ].append( (int)t );
 			}
 		}
 
@@ -985,7 +985,7 @@ namespace internal {
 				}
 			}
 		}
-		return toDelete.size();
+		return (int)toDelete.size();
 	}
 
 	bool AdjacencyInfo::triangulateSubPolygon_r( const LIST( int )& indices )
@@ -1089,7 +1089,7 @@ namespace internal {
 		e.vertices[ 1 ] = v2;
 		e.triangles[ 0 ] = -1;
 		e.triangles[ 1 ] = -1;
-		return edges.size() - 1;
+		return (int)edges.size() - 1;
 	}
 
 	int AdjacencyInfo::commonEdge( const Triangle_t& tri1, const Triangle_t& tri2 ) const
