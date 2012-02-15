@@ -743,7 +743,7 @@ namespace internal {
 		for( int t = 0; t < (int)triangles.size(); t++ ) {
 			Triangle_t& tri = triangles[ t ];
 			for( int v = 0; v < 3; v++ ) {
-				vertexTriangleAdjacencyInfo[ tri.vertices[ v ] ].append( t );
+				vertexTriangleAdjacencyInfo[ tri.vertices[ v ] ].append( (int)t );
 			}
 		}
 
