@@ -67,9 +67,9 @@ namespace DataStructures {
 		void medianPartition(PhotonMapSample_t** tree, const int begin, const int end, const int median, const int axis);
 		void nearestSamples_r(PhotonMapKNN* nearestSamples, SampleIndex_t indexArray ) const;
 
-		::std::vector<PhotonMapSample_t>		sampleMap;	// Organized as an array first, and then balanced as a binary tree 
+		::std::vector<PhotonMapSample_t>	sampleMap;	// Organized as an array first, and then balanced as a binary tree 
 														// where the i-th child is located at 2*i and its sibling at 2*i+1		
-		::std::vector<size_t>					mapping;	// Transforms internal indices back to the original order, so that 
+		::std::vector<SampleIndex_t>		mapping;	// Transforms internal indices back to the original order, so that 
 														// ::nearestSamples index results match the provided samples array.
 		RenderLib::Geometry::BoundingBox	bbox;		// tree bounds
 	};

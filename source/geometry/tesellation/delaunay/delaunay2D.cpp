@@ -43,7 +43,7 @@ namespace internal {
 										LIST(int)* outTriangles, 
 										const LIST( RenderLib::Math::Vector2f )& vertices ) {
 		// remove triangles containing vertices from the supertriangle
-		for( size_t i = 0; i < adjacency->triangles.size(); i++ ) {
+		for( int i = 0; i < (int)adjacency->triangles.size(); i++ ) {
 			const AdjacencyInfo::Triangle_t& triangle = adjacency->triangles[ i ];
 			if ( !triangle.valid ) {
 				continue;
@@ -65,18 +65,18 @@ namespace internal {
 		if ( outTriangles != NULL ) {
 			for( size_t i = 0; i < outTriangles->size(); i++ )
 			{
-				(*outTriangles)[i] -= 3;
+				(*outTriangles)[(unsigned int)i] -= 3;
 			}
 		}
 
-		for( size_t i = 0; i < adjacency->triangles.size(); i++ ) {
+		for( int i = 0; i < (int)adjacency->triangles.size(); i++ ) {
 			if ( !adjacency->triangles[ i ].valid ) {
 				const int remappedTriangle = (int)adjacency->triangles.size() - 1;
 				adjacency->triangles.removeIndexFast( i );
 
 				// remap edges pointing to this triangle
 				for( size_t e = 0; e < adjacency->edges.size(); e++ ) {
-					AdjacencyInfo::Edge_t& edge = adjacency->edges[ e ];
+					AdjacencyInfo::Edge_t& edge = adjacency->edges[ (unsigned int)e ];
 					if ( edge.triangles[ 0 ] == remappedTriangle ) {
 						edge.triangles[ 0 ] = i;
 					}
@@ -95,11 +95,11 @@ namespace internal {
 		}
 		adjacency->vertices.resize( vertices.size(), false );
 		for( size_t i = 0; i < vertices.size(); i++ ) {
-			adjacency->vertices[ i ] = vertices[ i ];
+			adjacency->vertices[ (unsigned int)i ] = vertices[ (unsigned int)i ];
 		}
 		for( size_t i = 0; i < adjacency->edges.size(); i++ ) {
-			adjacency->edges[ i ].vertices[ 0 ] -= 3;
-			adjacency->edges[ i ].vertices[ 1 ] -= 3;
+			adjacency->edges[ (unsigned int)i ].vertices[ 0 ] -= 3;
+			adjacency->edges[ (unsigned int)i ].vertices[ 1 ] -= 3;
 		}
 	}
 
@@ -113,7 +113,7 @@ namespace internal {
 
 			Bounds2D bounds;
 			for( size_t i = 0; i < vertices.size(); i++ ) {
-				bounds.expand( vertices[ i ] );
+				bounds.expand( vertices[ (unsigned int)i ] );
 			}
 
 			Point2f center;
@@ -131,9 +131,9 @@ namespace internal {
 			st3.x = center.x + 2.0f * radius * cosf( (float)DEG2RAD(240.0) );
 			st3.y = center.y + 2.0f * radius * sinf( (float)DEG2RAD(240.0) );
 
-			stIdx1 = adjacency->vertices.size() - 3;
-			stIdx2 = adjacency->vertices.size() - 2;
-			stIdx3 = adjacency->vertices.size() - 1;
+			stIdx1 = (int)adjacency->vertices.size() - 3;
+			stIdx2 = (int)adjacency->vertices.size() - 2;
+			stIdx3 = (int)adjacency->vertices.size() - 1;
 
 			adjacency->createTriangle( stIdx1, stIdx2, stIdx3 );
 	}
@@ -150,11 +150,11 @@ namespace internal {
 		for( size_t i = 0; i < vertices.size(); i++ ) {
 
 			// Insert Vi
-			const Vector2f& Vi = vertices[ i ];
+			const Vector2f& Vi = vertices[ (unsigned int)i ];
 
 			bool skip = false;
 			for( size_t j = 0; j < adjacency->vertices.size(); j++ ) {
-				if ( ( Vi - adjacency->vertices[ j ] ).length() <= Delaunay::internal::COINCIDENT_POINTS_DISTANCE_EPSILON ){
+				if ( ( Vi - adjacency->vertices[ (unsigned int)j ] ).length() <= Delaunay::internal::COINCIDENT_POINTS_DISTANCE_EPSILON ){
 					// the point has already been inserted. Skip it
 					skip = true;
 					break;
@@ -192,7 +192,7 @@ namespace internal {
 			}
 
 			while( !toCheck.empty() ) {
-				int tri = toCheck[ toCheck.size() - 1 ];
+				int tri = toCheck[ (unsigned int)toCheck.size() - 1 ];
 				toCheck.resize( toCheck.size() - 1 , false );
 
 				AdjacencyInfo::Triangle_t& triangle = adjacency->triangles[ tri ];
@@ -274,7 +274,7 @@ namespace internal {
 				}
 				int intersections = 0;						
 
-				for( size_t j = 0; j < edges.size(); j += 2 ) {
+				for( unsigned int j = 0; j < (unsigned int)edges.size(); j += 2 ) {
 					if ( edges[ j ] == edges[ j + 1 ] || edges[ j ] < 0 || edges[ j + 1 ] < 0 ) {
 						continue;
 					}
@@ -327,7 +327,7 @@ namespace internal {
 		using namespace RenderLib::Math;
 		assert( a != b && a != c && b != c );
 #if _DEBUG
-		for( size_t i = 0; i < triangles.size(); i++ ) {					
+		for( unsigned int i = 0; i < (unsigned int)triangles.size(); i++ ) {					
 			assert( !( triangles[ i ].valid && triangles[ i ].contains( a, b, c ) ) );
 		}
 
@@ -339,7 +339,7 @@ namespace internal {
 #endif
 		int triangleIndex;
 		if ( invalidTriangles.empty() ) {
-			triangleIndex = triangles.size();
+			triangleIndex = (int)triangles.size();
 			triangles.append();
 		} else {
 			triangleIndex = invalidTriangles[ 0 ];
@@ -351,9 +351,9 @@ namespace internal {
 		triangle.vertices[ 2 ] = c;
 
 		if ( !vertexTriangleAdjacencyInfo.empty() ) {
-			vertexTriangleAdjacencyInfo[ a ].append( triangleIndex );
-			vertexTriangleAdjacencyInfo[ b ].append( triangleIndex );
-			vertexTriangleAdjacencyInfo[ c ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)a ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)b ].append( triangleIndex );
+			vertexTriangleAdjacencyInfo[ (int)c ].append( triangleIndex );
 		}
 
 
@@ -379,7 +379,7 @@ namespace internal {
 
 	void AdjacencyInfo::removeTriangle( unsigned int t )
 	{
-		Triangle_t& triangle = triangles[ t ];
+		Triangle_t& triangle = triangles[ (unsigned int)t ];
 		assert( triangle.valid );
 
 		for( int i = 0; i < 3; i++ ) {
@@ -400,7 +400,7 @@ namespace internal {
 		}
 
 		for( size_t i = 0; i < vertexTriangleAdjacencyInfo.size(); i++ ) {
-			LIST( int )& adjacents = vertexTriangleAdjacencyInfo[ i ];
+			LIST( int )& adjacents = vertexTriangleAdjacencyInfo[ (unsigned int)i ];
 			adjacents.removeFast( (int)t );
 		}
 
@@ -414,7 +414,7 @@ namespace internal {
 		using namespace RenderLib::Math;
 		for( size_t i = 0; i < triangles.size(); i++ ) {
 
-			const Triangle_t& t = triangles[ i ];
+			const Triangle_t& t = triangles[ (unsigned int)i ];
 			if ( !t.valid ) {
 				continue;
 			}
@@ -439,7 +439,7 @@ namespace internal {
 			}
 
 			if ( hit ) {
-				return i;
+				return (int)i;
 			}
 		}
 		return -1;
@@ -740,7 +740,7 @@ namespace internal {
 		}
 
 		vertexTriangleAdjacencyInfo.resize( vertices.size() );
-		for( size_t t = 0; t < triangles.size(); t++ ) {
+		for( int t = 0; t < (int)triangles.size(); t++ ) {
 			Triangle_t& tri = triangles[ t ];
 			for( int v = 0; v < 3; v++ ) {
 				vertexTriangleAdjacencyInfo[ tri.vertices[ v ] ].append( t );
@@ -748,10 +748,10 @@ namespace internal {
 		}
 
 #if _DEBUG
-		for( size_t i = 0; i < vertexTriangleAdjacencyInfo.size(); i++ ) {
-			LIST( int )& adjacents = vertexTriangleAdjacencyInfo[ i ];
+		for( int i = 0; i < (int)vertexTriangleAdjacencyInfo.size(); i++ ) {
+			LIST( int )& adjacents = vertexTriangleAdjacencyInfo[ (unsigned int)i ];
 			for( size_t j = 0; j < adjacents.size(); j++ ) {
-				Triangle_t& t = triangles[ adjacents[ j ] ];
+				Triangle_t& t = triangles[ adjacents[ (unsigned int)j ] ];
 				assert( t.contains( i ) );
 			}
 		}
@@ -777,7 +777,7 @@ namespace internal {
 
 		// find the triangle containing v0
 		for( size_t t = 0; t < v0Adjacents.size(); t++ ) {
-			const Triangle_t& triangle = triangles[ v0Adjacents[ t ] ];
+			const Triangle_t& triangle = triangles[ v0Adjacents[ (unsigned int)t ] ];
 			assert( triangle.contains( vIdx0 ) );
 			for( int e = 0; e < 3; e++ ) {
 				const int edgeIdx = abs( triangle.edges[ e ] ) - 1;
@@ -815,7 +815,7 @@ namespace internal {
 
 				if ( segmentIntersect( v0, v1, triVi, triVj ) ) {
 					triEdge = e;
-					tri = v0Adjacents[ t ];
+					tri = v0Adjacents[ (unsigned int)t ];
 
 					upperVertices.append( vIdx0 );
 					lowerVertices.append( vIdx0 );
@@ -953,39 +953,39 @@ namespace internal {
 		}
 #endif
 		for( size_t i = 0; i < toDelete.size(); i++ ) {
-			removeTriangle( toDelete[ i ] );
+			removeTriangle( toDelete[ (unsigned int)i ] );
 		}
 
 		// sort the upper/lower lists in the correct order
 		if ( upperVertices.size() > 2 ) {
 			const Vector2f v1 = vertices[ upperVertices[ 1 ] ] - vertices[ upperVertices[ 0 ] ];
-			const Vector2f v2 = vertices[ upperVertices[ upperVertices.size() - 1 ] ] - vertices[ upperVertices[ 0 ] ];
+			const Vector2f v2 = vertices[ upperVertices[ (unsigned int)upperVertices.size() - 1 ] ] - vertices[ upperVertices[ 0 ] ];
 			const float crossProductZ = (v1.x * v2.y) - (v1.y * v2.x);
 			const bool reversed = crossProductZ < 0;
 			if ( reversed ) {
 				int aux;
-				for( size_t i = 0; i < upperVertices.size() / 2; i++ ) {
+				for( unsigned int i = 0; i < (unsigned int)upperVertices.size() / 2; i++ ) {
 					aux = upperVertices[ i ];
-					upperVertices[ i ] = upperVertices[ upperVertices.size() - 1 - i ];
-					upperVertices[ upperVertices.size() - 1 - i ] = aux;
+					upperVertices[ i ] = upperVertices[ (unsigned int)upperVertices.size() - 1 - i ];
+					upperVertices[ (unsigned int)upperVertices.size() - 1 - i ] = aux;
 				}
 			}
 		}
 		if ( lowerVertices.size() > 2 ) {
 			const Vector2f v1 = vertices[ lowerVertices[ 1 ] ] - vertices[ lowerVertices[ 0 ] ];
-			const Vector2f v2 = vertices[ lowerVertices[ lowerVertices.size() - 1 ] ] - vertices[ lowerVertices[ 0 ] ];
+			const Vector2f v2 = vertices[ lowerVertices[ (unsigned int)lowerVertices.size() - 1 ] ] - vertices[ lowerVertices[ 0 ] ];
 			const float crossProductZ = (v1.x * v2.y) - (v1.y * v2.x);
 			const bool reversed = crossProductZ < 0;
 			if ( reversed ) {
 				int aux;
-				for( size_t i = 0; i < lowerVertices.size() / 2; i++ ) {
+				for( unsigned int i = 0; i < (unsigned int)lowerVertices.size() / 2; i++ ) {
 					aux = lowerVertices[ i ];
-					lowerVertices[ i ] = lowerVertices[ lowerVertices.size() - 1 - i ];
-					lowerVertices[ lowerVertices.size() - 1 - i ] = aux;
+					lowerVertices[ i ] = lowerVertices[ (unsigned int)lowerVertices.size() - 1 - i ];
+					lowerVertices[ (unsigned int)lowerVertices.size() - 1 - i ] = aux;
 				}
 			}
 		}
-		return toDelete.size();
+		return (int)toDelete.size();
 	}
 
 	bool AdjacencyInfo::triangulateSubPolygon_r( const LIST( int )& indices )
@@ -1007,7 +1007,7 @@ namespace internal {
 		// look for a candidate point P between indices 1 and N-2
 		// so that the circumference passing through 0, p, N-1 is empty
 		Vector2f& a = vertices[ indices[ 0 ] ];
-		Vector2f& b = vertices[ indices[ indices.size() - 1 ] ];
+		Vector2f& b = vertices[ indices[ (unsigned int)indices.size() - 1 ] ];
 		int splitPoint = -1;
 		for( int i = 1; i < (int)indices.size() - 1; i++ ) {
 			Vector2f& p = vertices[ indices[ i ] ];
@@ -1040,12 +1040,12 @@ namespace internal {
 		}			
 
 		for( size_t i = (size_t)splitPoint; i < indices.size(); i++ ) {
-			right.append( indices[ i ] );
+			right.append( indices[ (unsigned int)i ] );
 		}
 		assert( left.size() < indices.size() );
 		assert( right.size() < indices.size() );
-		if ( !pointOnSegment<float>( vertices[ indices[ 0 ] ], vertices[ indices[ indices.size() - 1 ] ], vertices[ indices[ splitPoint ] ] ) ) {
-			 createTriangle( indices[ 0 ], indices[ splitPoint ], indices[ indices.size() - 1 ] ); 
+		if ( !pointOnSegment<float>( vertices[ indices[ 0 ] ], vertices[ indices[ (unsigned int)indices.size() - 1 ] ], vertices[ (unsigned int)indices[ splitPoint ] ] ) ) {
+			 createTriangle( indices[ 0 ], indices[ splitPoint ], indices[ (unsigned int)indices.size() - 1 ] ); 
 		}
 
 		if ( left.size() >= 3 ) {
@@ -1064,10 +1064,10 @@ namespace internal {
 	int AdjacencyInfo::findEdge( int v1, int v2 ) const
 	{
 		assert( v1 != v2 );
-		for( size_t i = 0; i < edges.size(); i++ ) {
+		for( int i = 0; (int)i < edges.size(); i++ ) {
 			if ( edges[ i ].Links( v1, v2 ) )
 			{
-				return (int)i;
+				return i;
 			}
 		}
 		return -1;
@@ -1089,7 +1089,7 @@ namespace internal {
 		e.vertices[ 1 ] = v2;
 		e.triangles[ 0 ] = -1;
 		e.triangles[ 1 ] = -1;
-		return edges.size() - 1;
+		return (int)edges.size() - 1;
 	}
 
 	int AdjacencyInfo::commonEdge( const Triangle_t& tri1, const Triangle_t& tri2 ) const
@@ -1302,7 +1302,7 @@ namespace internal {
 			}
 
 			// insert edges
-			for( size_t i = 0; i < edges.size(); i += 2 ) {
+			for( unsigned int i = 0; i < (unsigned int)edges.size(); i += 2 ) {
 				int v0 = edges[ i ];
 				int v1 = edges[ i + 1 ];
 				if ( v0 == v1 || v0 < 0 || v1 < 0 ) {
