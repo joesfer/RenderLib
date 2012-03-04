@@ -33,7 +33,7 @@ namespace Math {
 
 		inline Normal2<T> operator -() const;
 
-		inline Normal2<T>& Normalize();
+		inline T normalize();
 		inline static Normal2<T> normalize(const Normal2<T>& n);
 
 		inline bool equals( const Normal2<T>& p, T epsilon ) const;

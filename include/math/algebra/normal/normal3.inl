@@ -4,23 +4,24 @@ inline Normal3<T>::Normal3( const T X, const T Y, const T Z) {
 	// build Normal3<T> making vector <x,y,z> unitary
 
 	T length = sqrt(X*X + Y*Y + Z*Z);		
-	assert(length > 0);
-
-	x = X / length; 
-	y = Y / length; 
-	z = Z / length;
+	if ( length > 0 ) {
+		x = X / length; 
+		y = Y / length; 
+		z = Z / length;
+	}
 }
 
 template< typename T >
 inline Normal3<T>::Normal3( const Vector3<T>& v) {
 	// build Normal3<T> making vector <x,y,z> unitary
 
-	T length = v.Length();
+	T length = v.length();
 
-	assert(length > 0);
-	x = v.x / length;
-	y = v.y / length;
-	z = v.z / length;
+	if ( length > 0 ) {
+		x = v.x / length;
+		y = v.y / length;
+		z = v.z / length;
+	}
 }
 
 template< typename T >
@@ -94,12 +95,12 @@ inline Normal3<T> Normal3<T>::normalize(const Normal3<T>& n) {
 }
 
 template< typename T >
-inline T Normal3<T>::dot(const Normal3<T>& n, const Vector3<T>& v) const {
+inline T Normal3<T>::dot(const Normal3<T>& n, const Vector3<T>& v) {
 	return n.x*v.x + n.y*v.y + n.z*v.z;
 }
 
 template< typename T >
-inline T Normal3<T>::dot(const Normal3<T>& n1, const Normal3<T>& n2) const {
+inline T Normal3<T>::dot(const Normal3<T>& n1, const Normal3<T>& n2) {
 	return x*v.x + y*v.y + z*v.z;
 }
 
