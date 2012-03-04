@@ -162,7 +162,7 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 					const Point3f& p1 = verts[ indices[ triangleOffset + 1] ].position;
 					const Point3f& p2 = verts[ indices[ triangleOffset + 2] ].position;
 
-                                        if ( segmentTriangleIntersect_DoubleSided( ray.origin, ray.direction, tMin, tMax, p0, p1, p2, t, v, w ) ) {
+					if ( segmentTriangleIntersect_DoubleSided( ray.origin, ray.direction, tMin, tMax, p0, p1, p2, t, v, w ) ) {
 						if ( trace.testOnly ) {
 							return true;
 						}
@@ -184,7 +184,7 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 					const Point3f& p1 = verts[ indices[ triangleOffset + 1] ].position;
 					const Point3f& p2 = verts[ indices[ triangleOffset + 2] ].position;
 
-                                        if ( segmentTriangleIntersect_SingleSided( trace.startPoint, trace.endPoint, p0, p1, p2, t, v, w ) ) {
+					if ( segmentTriangleIntersect_SingleSided( trace.startPoint, trace.endPoint, p0, p1, p2, t, v, w ) ) {
 						if ( trace.testOnly ) {
 							return true;
 						} else if ( t < isect.t ) {
