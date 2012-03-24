@@ -181,7 +181,7 @@ namespace DataStructures {
 					aux[ i ] = &sampleMap[ i ];
 				}
 
-				balanceSubTree_r( &aux[0], 0, 0, sampleMap.size() - 1, &balancedAux[0] );
+				balanceSubTree_r( &aux[0], 0, 0, (unsigned int)sampleMap.size() - 1, &balancedAux[0] );
 			}
 
 			// Rearrange the balanced KDTree, building a heap

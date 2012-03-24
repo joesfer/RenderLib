@@ -33,6 +33,9 @@
 #include <math/algebra/point/point3.h>
 #include <math/algebra/vector/vector2.h>
 #include <math/algebra/vector/vector3.h>
+#include <math/algebra/normal/normal2.h>
+#include <math/algebra/normal/normal3.h>
+#include <math/algebra/quaternion/quaternion.h>
 
 #include <math/sampling/random.h>
 #include <math/sampling/lowDiscrepancy.h>

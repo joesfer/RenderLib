@@ -80,13 +80,13 @@ inline Normal2<T> Normal2<T>::operator -() const {
 }
 
 template< typename T >
-inline Normal2<T>& Normal2<T>::normalize() {
+inline T Normal2<T>::normalize() {
 	T length = sqrt( x * x + y * y);
 	assert(length != 0);
 	T invLength = 1.0 / length;
 	x *= invLength; 
 	y *= invLength;
-	return *this;
+	return length;
 }
 
 template< typename T >
@@ -112,11 +112,11 @@ inline bool Normal2<float>::equals( const Normal2<float>& p, float epsilon ) con
 }
 
 template<>
-inline Normal2<float>& Normal2<float>::normalize() {
+inline float Normal2<float>::normalize() {
 	float length = sqrtf( x * x + y * y );
 	assert(length != 0);
 	float invLength = 1.0f / length;
 	x *= invLength; 
 	y *= invLength;
-	return *this;
+	return length;
 }

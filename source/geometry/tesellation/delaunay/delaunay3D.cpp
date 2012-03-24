@@ -579,7 +579,7 @@ namespace internal {
 		const CoreLib::List< Point >& vertices,
 		unsigned int resultingTetrahedra[4] ) {
 
-		tetrahedron_t srcT = tetrahedra[ tetrahedron ];
+		tetrahedron_t srcT = tetrahedra[ (int)tetrahedron ];
 		assert( Tetrahedron::checkFaceOrientations( srcT, vertices ) );
 
 		assert( Tetrahedron::checkNeighbors( srcT, tetrahedron, tetrahedra, vertices ) );
@@ -597,11 +597,11 @@ namespace internal {
 		const unsigned int iResT1 = tetrahedron; // reuse the source tetrahedron slot
 		tetrahedron_t& resT1 = tetrahedra[ iResT1 ];
 		Tetrahedron::destroy( resT1, tetrahedra );
-		const unsigned int iResT2 = tetrahedra.size(); 
+		const unsigned int iResT2 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT2 = tetrahedra.append();
-		const unsigned int iResT3 = tetrahedra.size(); 
+		const unsigned int iResT3 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT3 = tetrahedra.append();
-		const unsigned int iResT4 = tetrahedra.size(); 
+		const unsigned int iResT4 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT4 = tetrahedra.append();
 
 		assert( !resT1.isValid() );
@@ -748,7 +748,7 @@ namespace internal {
 		const unsigned int iResT2 = tetrahedron2; // reuse the source tetrahedron2 slot
 		tetrahedron_t& resT2 = tetrahedra[ iResT2 ];
 		Tetrahedron::destroy( resT2, tetrahedra );
-		const unsigned int iResT3 = tetrahedra.size(); 
+		const unsigned int iResT3 = (unsigned int)tetrahedra.size(); 
 		tetrahedron_t& resT3 = tetrahedra.append();
 
 		assert( !resT1.isValid() );
@@ -1413,7 +1413,7 @@ namespace internal {
 		CoreLib::List< bool > visited;
 		visited.resize( tetrahedra.size(), true );
 		for( size_t i = 0; i < tetrahedra.size(); i++ ) {
-			visited[ i ] = false;
+			visited[ (unsigned int)i ] = false;
 		}
 		CoreLib::List< int > traversal( 64 );
 		
@@ -1455,8 +1455,8 @@ namespace internal {
 
 				bool found = false;
 				for( size_t i = 0; i < visited.size(); i++ ) {
-					if ( !visited[ i ] ) {
-						t = i;
+					if ( !visited[ (unsigned int)i ] ) {
+						t = (int)i;
 						found = true;
 						break;
 					}
@@ -1951,7 +1951,7 @@ bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
 
 									BoundingBox bounds;
 									for( size_t i = 0; i < srcPoints.size(); i++ ) {
-										bounds.expand( srcPoints[ i ] );
+										bounds.expand( srcPoints[ (unsigned int)i ] );
 									}
 
 									Point3f center;
@@ -1981,12 +1981,12 @@ bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
 
 									tetrahedra.setGranularity( 4 * numSrcPoints );
 									for( size_t i = 0; i < numSrcPoints; i++ ) {
-										internal::insertOnePoint( pointSet, i, tetrahedra );
+										internal::insertOnePoint( pointSet, (int)i, tetrahedra );
 									}
 #if _DEBUG
 									// verify Delaunay condition (empty spheres) for all tetrahedra
 									for( size_t i = 0; i < tetrahedra.size(); i++ ) {
-										const tetrahedron_t& T = tetrahedra[ i ];
+										const tetrahedron_t& T = tetrahedra[ (unsigned int)i ];
 										if ( !T.isValid() ) {
 											continue;
 										}
@@ -1995,7 +1995,7 @@ bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
 										const Point& T2 = pointSet[ T.v[ 1 ] ];
 										const Point& T3 = pointSet[ T.v[ 3 ] ];
 										for( size_t j = 0; j < pointSet.size(); j++ ) {
-											assert( internal::inSphere( T0, T1, T2, T3, pointSet[ j ] ) <= 0 );
+											assert( internal::inSphere( T0, T1, T2, T3, pointSet[ (unsigned int)j ] ) <= 0 );
 										}
 									}
 #endif

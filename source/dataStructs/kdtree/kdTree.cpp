@@ -199,6 +199,7 @@ namespace DataStructures {
 			split = *splitIt;
 
 			size_t leftCount = triangleIndices.size() - right.size();
+
 			for ( int j = 0; j < static_cast<int>(right.size()); j++ ) {			
 				float minBound = triangleBounds[ right[ j ] ].bounds.min()[ axis ];
 				float maxBound = triangleBounds[ right[ j ] ].bounds.max()[ axis ];
@@ -252,6 +253,7 @@ namespace DataStructures {
 
 		CoreLib::List< float > sorter;
 		sorter.resize( triangleIndices.size(), true );
+
 		for ( int i = 0; i < static_cast<int>(triangleIndices.size()); i++ ) {
 			sorter[ i ] = triangleBounds[ triangleIndices[ i ] ].centroid[ axis ];
 		}

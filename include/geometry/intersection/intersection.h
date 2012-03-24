@@ -74,7 +74,9 @@ namespace Geometry {
 	template<typename T>
 	inline bool segmentTriangleIntersect_SingleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
                                                           const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c,
-                                                          float& t, float& v, float& w ) {
+                                                          T& t, // segment dist
+														  T& v, T& w // barycentric
+														  ) {
 		using namespace RenderLib::Math;
 
 		Vector3<T> ab = b - a;
@@ -116,7 +118,8 @@ namespace Geometry {
 	inline bool segmentTriangleIntersect_DoubleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Vector3<T>& dir, 
 													 T minT, T maxT, 
 													 const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c, 
-													 T& t, T& v, T& w,
+													 T& t, // segment dist
+													 T& v, T& w, // barycentric
 													 const T epsilon = 1e-5 ) {
 		using namespace RenderLib::Math;
 
@@ -158,18 +161,6 @@ namespace Geometry {
 		const T lengthEpsilon = 1e-4;
 		return segmentTriangleIntersect_DoubleSided<T>( p, dir, -lengthEpsilon, maxT + lengthEpsilon, a, b, c, t, v, w, epsilon );
 	}
-
-
-	////////////////////////////////////////////////////////////////////////////
-	// segmentTriIntersection
-	//
-	// An alternative version of segmentTriangleIntersect_SingleSided which
-	// returns the intersection point instead of the barycentric coordinates
-	// 
-	// This function expects triangles in CCW order
-	bool segmentTriIntersection( const RenderLib::Math::Point3f& p, const RenderLib::Math::Point3f& q,
-		const RenderLib::Math::Point3f& a, const RenderLib::Math::Point3f& b, const RenderLib::Math::Point3f& c,
-		RenderLib::Math::Vector3f& isect);
 
 } // namespace Geometry
 } // namespace RenderLib

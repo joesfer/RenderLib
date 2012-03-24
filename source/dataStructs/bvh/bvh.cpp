@@ -46,7 +46,7 @@ BVH::BVH(const std::vector<RenderLib::Math::Vector3f> &vertices, const std::vect
     } else {
         vector<int> primitives;
         primitives.reserve(numPrimitives);
-        for( size_t i = 0; i < numPrimitives; i++ ) primitives.push_back(i);
+        for( size_t i = 0; i < numPrimitives; i++ ) primitives.push_back((int)i);
         split(0, vertices, indices, centroids, primitives, bounds);
     }
 }
@@ -120,16 +120,16 @@ void BVH::split( size_t nodeIndex,
             // create left child
             BVHNode leftChild;
             Sphere leftSphere( leftBounds.center(), (leftBounds.center() - leftBounds.min()).length() );
-            leftChild.volumeIndex = volumes.size();
+            leftChild.volumeIndex = (int)volumes.size();
             volumes.push_back(leftSphere);
 
             // create right child
             BVHNode rightChild;
             Sphere rightSphere( rightBounds.center(), (rightBounds.center() - rightBounds.min()).length() );
-            rightChild.volumeIndex = volumes.size();
+            rightChild.volumeIndex = (int)volumes.size();
             volumes.push_back(rightSphere);
 
-            node.leftChildIndex = nodes.size();
+            node.leftChildIndex = (int)nodes.size();
             leftChildIndex = node.leftChildIndex;
             rightChildIndex = leftChildIndex + 1;
             nodes.push_back(leftChild);
@@ -161,16 +161,34 @@ RenderLib::Raytracing::Sphere BVH::boundingSphere( const std::vector<RenderLib::
 	return s;
 }
 
+struct BVH::hit_t {
+	int a, b, c; // vertex index
+	int triangle; // triangle index
+	float t; // segment dist
+	float v,w; // barycentric coords
+};
+
 bool BVH::intersection(const RenderLib::Raytracing::Ray &r,
 						const std::vector<RenderLib::Math::Vector3f>& vertices, const std::vector<int>& indices,
-						RenderLib::Math::Vector3f& isect) const {
-    return intersection_r(r, vertices, indices, 0, isect);
+						RenderLib::Math::Vector3f& isect,
+						int* triangleIndex,
+						float* barycentricU, 
+						float* barycentricV ) const {
+	hit_t hit;
+	bool res = intersection_r(r, vertices, indices, 0, hit );
+	if ( res ) {
+		isect = vertices[hit.a] + (vertices[hit.b] -  vertices[hit.a] ) * hit.v + ( vertices[hit.c] - vertices[hit.a] ) * hit.w;
+		if ( triangleIndex != NULL ) *triangleIndex = hit.triangle;
+		if ( barycentricU != NULL ) *barycentricU = hit.v;
+		if ( barycentricV != NULL ) *barycentricV = hit.w;
+	}
+	return res;
 }
 
 bool BVH::intersection_r(const RenderLib::Raytracing::Ray& r,
                          const std::vector<RenderLib::Math::Vector3f>& vertices, const std::vector<int>& indices,
                          int node,
-                         RenderLib::Math::Vector3f& isect) const {
+                         hit_t& hit ) const {
 	using namespace RenderLib::Math;
 	using namespace RenderLib::Raytracing;
 	using namespace RenderLib::Geometry;
@@ -182,12 +200,14 @@ bool BVH::intersection_r(const RenderLib::Raytracing::Ray& r,
     // got intersection
     if( n.leaf ) {
         // we have an intersection with a leaf volume, refine with the actual primitive.
-        const Vector3f& a = vertices[ indices[ 3 * n.primitiveIndex ] ];
-        const Vector3f& b = vertices[ indices[ 3 * n.primitiveIndex + 1 ] ];
-        const Vector3f& c = vertices[ indices[ 3 * n.primitiveIndex + 2 ] ];
+        hit.a = indices[ 3 * n.primitiveIndex ];
+        hit.b = indices[ 3 * n.primitiveIndex + 1 ];
+        hit.c = indices[ 3 * n.primitiveIndex + 2 ];
+		hit.triangle = n.primitiveIndex;
         const Sphere& volume = volumes[ n.volumeIndex ];
         const Point3f q = r.origin + r.direction * ((r.origin - volume.center).length() + volume.radius);
-        return segmentTriIntersection( r.origin, q, a, b, c, isect);
+		return segmentTriangleIntersect_SingleSided<float>( r.origin, q, vertices[hit.a], vertices[hit.b], vertices[hit.c], hit.t, hit.v, hit.w);
+		
     } else {
         // sort children by distance to ray origin
         // and test in that order (hoping the closest one
@@ -200,12 +220,12 @@ bool BVH::intersection_r(const RenderLib::Raytracing::Ray& r,
         float distRight = Vector3f::dot(r.direction, rightChildVolume.center - r.origin);
         if ( distLeft <= distRight ) {
             // recurse first left, then right
-            if (intersection_r(r, vertices, indices, leftChildIdx, isect)) return true;
-            return intersection_r(r, vertices, indices, rightChildIdx, isect);
+            if (intersection_r(r, vertices, indices, leftChildIdx, hit)) return true;
+            return intersection_r(r, vertices, indices, rightChildIdx, hit);
         } else {
             // recurse first right, then left
-            if (intersection_r(r, vertices, indices, rightChildIdx, isect)) return true;
-            return intersection_r(r, vertices, indices, leftChildIdx, isect);
+            if (intersection_r(r, vertices, indices, rightChildIdx, hit)) return true;
+            return intersection_r(r, vertices, indices, leftChildIdx, hit);
         }
     }
 }

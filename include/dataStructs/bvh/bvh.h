@@ -37,7 +37,10 @@ public:
     BVH( const std::vector<RenderLib::Math::Vector3f>& vertices, const std::vector<int>& indices );
     bool intersection(const RenderLib::Raytracing::Ray& r,
                       const std::vector<RenderLib::Math::Vector3f>& vertices, const std::vector<int>& indices,
-                      RenderLib::Math::Vector3f& isect) const;
+                      RenderLib::Math::Vector3f& hitpoint,
+					  int* triangleIndex = NULL,
+					  float* barycentricU = NULL, 
+					  float* barycentricV = NULL ) const;
 private:
 
     class BVHNode {
@@ -57,12 +60,13 @@ private:
                 std::vector<int>& primitives,
                 const RenderLib::Geometry::BoundingBox& bounds );
 
+	struct hit_t;
 	RenderLib::Raytracing::Sphere boundingSphere( const std::vector<RenderLib::Math::Vector3f>& vertices, const std::vector<int>& indices ) const;
     bool intersection_r(const RenderLib::Raytracing::Ray& r,
                         const std::vector<RenderLib::Math::Vector3f>& vertices,
                         const std::vector<int>& indices,
                         int node,
-                        RenderLib::Math::Vector3f& isect ) const;
+						hit_t& hit ) const;
 
     std::vector<BVHNode> nodes;
     std::vector<RenderLib::Raytracing::Sphere> volumes;
