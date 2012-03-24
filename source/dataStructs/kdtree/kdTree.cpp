@@ -118,7 +118,7 @@ namespace DataStructures {
 				BoundingBox rightBounds = bounds;
 				rightBounds.min()[ bestPlaneType ] = bestSplitter;
 
-				for ( size_t i = 0; i < node->triangles.size(); i++ ) {
+				for ( int i = 0; i < static_cast<int>(node->triangles.size()); i++ ) {
 					int tri = node->triangles[ i ];
 					const BoundingBox& triBounds = triangleBounds[ tri ].bounds;
 
@@ -175,7 +175,7 @@ namespace DataStructures {
 		CoreLib::List< float > sorter;
 		sorter.resize( triangleIndices.size() * 2, true );
 		
-		for ( size_t i = 0; i < triangleIndices.size(); i ++ ) {
+		for ( int i = 0; i < static_cast<int>(triangleIndices.size()); i ++ ) {
 			sorter[ 2 * i     ] = triangleBounds[ triangleIndices[ i ] ].bounds.min()[ axis ];
 			sorter[ 2 * i + 1 ] = triangleBounds[ triangleIndices[ i ] ].bounds.max()[ axis ];	
 		}
@@ -199,7 +199,7 @@ namespace DataStructures {
 			split = *splitIt;
 
 			size_t leftCount = triangleIndices.size() - right.size();
-			for ( size_t j = 0; j < right.size(); j++ ) {			
+			for ( int j = 0; j < static_cast<int>(right.size()); j++ ) {			
 				float minBound = triangleBounds[ right[ j ] ].bounds.min()[ axis ];
 				float maxBound = triangleBounds[ right[ j ] ].bounds.max()[ axis ];
 
@@ -252,14 +252,14 @@ namespace DataStructures {
 
 		CoreLib::List< float > sorter;
 		sorter.resize( triangleIndices.size(), true );
-		for ( size_t i = 0; i < triangleIndices.size(); i++ ) {
+		for ( int i = 0; i < static_cast<int>(triangleIndices.size()); i++ ) {
 			sorter[ i ] = triangleBounds[ triangleIndices[ i ] ].centroid[ axis ];
 		}
 
 		sorter.sort( splitterSort );
 		if ( ( sorter.size() % 2 ) == 0 ) {
-			int low = ( (int)sorter.size() - 1 ) / 2;
-			int high = ( sorter.size() ) / 2;
+			int low = ( static_cast<int>(sorter.size()) - 1 ) / 2;
+			int high = ( static_cast<int>(sorter.size()) ) / 2;
 			return ( sorter[ low ] + sorter[ high ] ) * 0.5f;
 		}
 
