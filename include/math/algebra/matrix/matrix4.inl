@@ -98,3 +98,33 @@ T Matrix4<T>::determinant() const {
 
 	return ( - det3_201_123 * m[3][0] + det3_201_023 * m[3][1] - det3_201_013 * m[3][2] + det3_201_012 * m[3][3] );
 }
+
+
+/*
+================
+Matrix4<T>::transform
+================
+*/
+template< typename T >
+Vector3<T>  Matrix4<T>::transform(const Vector3<T>& v) const {
+	// w = 0
+	return Vector3<T>(	m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
+						m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
+						m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z );
+}
+
+
+/*
+================
+Matrix4<T>::transform
+================
+*/
+template< typename T >
+Point3<T>  Matrix4<T>::transform(const Point3<T>& p) const {
+	// w = 1
+	float x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
+	float y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
+	float z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3];
+	float w = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3];
+	return Point3<T>( x / w, y / w, z / w );
+}
