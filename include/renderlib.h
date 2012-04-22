@@ -46,6 +46,7 @@
 #include <geometry/utils.h>
 #include <geometry/tessellation/delaunay/delaunay2D.h>
 #include <geometry/tessellation/delaunay/delaunay3D.h>
+#include <geometry/topology/halfedge.h>
 
 #include <dataStructs/photonMap/photonMap.h>
 #include <dataStructs/triangleSoup/triangleSoup.h>
