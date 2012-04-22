@@ -31,9 +31,10 @@ namespace Geometry {
 	static const float COLLINEAR_EPSILON			= 1e-4f;
 	static const float EDGE_LENGTH_MIN_TRESHOLD		= 1e-3f;
 
-	inline float signed2DTriangleArea(	const RenderLib::Math::Vector2f& A, 
-										const RenderLib::Math::Vector2f& B, 
-										const RenderLib::Math::Vector2f& C ) {
+	template<typename T>
+	inline float signed2DTriangleArea(	const T& A, 
+										const T& B, 
+										const T& C ) {
 		return ( A.x - C.x ) * ( B.y - C.y ) - ( A.y - C.y ) * ( B.x - C.x );
 	}
 
@@ -73,8 +74,8 @@ namespace Geometry {
 
 	template<typename T>
 	inline bool segmentTriangleIntersect_SingleSided( const RenderLib::Math::Point3<T>& p, const RenderLib::Math::Point3<T>& q, 
-                                                          const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c,
-                                                          T& t, // segment dist
+														  const RenderLib::Math::Point3<T>& a, const RenderLib::Math::Point3<T>& b, const RenderLib::Math::Point3<T>& c,
+														  T& t, // segment dist
 														  T& v, T& w // barycentric
 														  ) {
 		using namespace RenderLib::Math;
