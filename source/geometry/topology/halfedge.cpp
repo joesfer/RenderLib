@@ -1,4 +1,3 @@
-#pragma once
 /*
 	================================================================================
 	This software is released under the LGPL-3.0 license: http://www.opensource.org/licenses/lgpl-3.0.html
@@ -20,8 +19,9 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 	================================================================================
 */
-#pragma once
+
 #include <geometry/topology/halfedge.h>
+
 namespace RenderLib {
 namespace Geometry {
 
@@ -29,8 +29,8 @@ bool HalfEdgeMesh::buildFromTriangles(const std::vector<int>& indices) {
 	using namespace std;
 
 	int numVertices = 0;
-	vector<int>::const_iterator idxIt = indices.cbegin();
-	while( idxIt != indices.cend() ) {
+	vector<int>::const_iterator idxIt = indices.begin();
+	while( idxIt != indices.end() ) {
 		numVertices = std::max(numVertices, *idxIt + 1);
 		idxIt++;
 	}

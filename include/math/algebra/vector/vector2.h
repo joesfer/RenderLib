@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <float.h>
 #include <stdlib.h>
-#include <math.h>
 #include <algorithm>
 
 namespace RenderLib {

@@ -1,3 +1,4 @@
+#include <math/numeric.h>
 
 template< typename T >
 inline Vector2<T> Vector2<T>::operator + (const Vector2<T>& v) const {
@@ -176,9 +177,6 @@ inline bool Vector2<T>::equals( const Vector2<T>& p, const T epsilon ) const {
 
 // specializations for Vector2d ////////////////////////////////////////////////////
 
-// according to the IEEE standards, a NaN number always returns false when compared against itself
-#define _isnanf( f ) ( f != f )
-
 template<>
 inline bool Vector2<double>::isValid() const {
 	return !_isnan( x ) && !_isnan( y )/* && _finite( x ) && _finite( y ) */;
@@ -193,7 +191,7 @@ inline Vector2<double> Vector2<double>::clamp(const Vector2<double>& v, double M
 
 template<>
 inline bool Vector2<float>::isValid() const {
-	return !_isnanf( x ) && !_isnanf( y )/* && _finitef( x ) && _finitef( y )*/;
+	return !_isnan( x ) && !_isnan( y )/* && _finitef( x ) && _finitef( y )*/;
 }
 
 template<>

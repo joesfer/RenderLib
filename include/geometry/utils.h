@@ -83,39 +83,39 @@ namespace Geometry {
 		*/
 		
 		// Minors
-		Matrix4<T> minor(	p0.x, p0.y, p0.z, 1,
-							p1.x, p1.y, p1.z, 1,
-							p2.x, p2.y, p2.z, 1,
-							p3.x, p3.y, p3.z, 1 );
-		T m11 = minor.determinant();
+		Matrix4<T> _minor(	p0.x, p0.y, p0.z, static_cast<T>(1),
+							p1.x, p1.y, p1.z, static_cast<T>(1),
+							p2.x, p2.y, p2.z, static_cast<T>(1),
+							p3.x, p3.y, p3.z, static_cast<T>(1) );
+		T m11 = _minor.determinant();
 
 		if ( abs( m11 ) < 1e-5 ) { 
 			return false;
 		}
 
-		minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; minor.m[0][1] = p0.y; minor.m[0][2] = p0.z; minor.m[0][3] = 1;
-		minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; minor.m[1][1] = p1.y; minor.m[1][2] = p1.z; minor.m[1][3] = 1;
-		minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; minor.m[2][1] = p2.y; minor.m[2][2] = p2.z; minor.m[2][3] = 1;
-		minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; minor.m[3][1] = p3.y; minor.m[3][2] = p3.z; minor.m[3][3] = 1;
-		T m12 = minor.determinant();
+		_minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; _minor.m[0][1] = p0.y; _minor.m[0][2] = p0.z; _minor.m[0][3] = 1;
+		_minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; _minor.m[1][1] = p1.y; _minor.m[1][2] = p1.z; _minor.m[1][3] = 1;
+		_minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; _minor.m[2][1] = p2.y; _minor.m[2][2] = p2.z; _minor.m[2][3] = 1;
+		_minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; _minor.m[3][1] = p3.y; _minor.m[3][2] = p3.z; _minor.m[3][3] = 1;
+		T m12 = _minor.determinant();
 
-		minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; minor.m[0][1] = p0.x; minor.m[0][2] = p0.z; minor.m[0][3] = 1;
-		minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; minor.m[1][1] = p1.x; minor.m[1][2] = p1.z; minor.m[1][3] = 1;
-		minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; minor.m[2][1] = p2.x; minor.m[2][2] = p2.z; minor.m[2][3] = 1;
-		minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; minor.m[3][1] = p3.x; minor.m[3][2] = p3.z; minor.m[3][3] = 1;
-		T m13 = minor.determinant();
+		_minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; _minor.m[0][1] = p0.x; _minor.m[0][2] = p0.z; _minor.m[0][3] = 1;
+		_minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; _minor.m[1][1] = p1.x; _minor.m[1][2] = p1.z; _minor.m[1][3] = 1;
+		_minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; _minor.m[2][1] = p2.x; _minor.m[2][2] = p2.z; _minor.m[2][3] = 1;
+		_minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; _minor.m[3][1] = p3.x; _minor.m[3][2] = p3.z; _minor.m[3][3] = 1;
+		T m13 = _minor.determinant();
 
-		minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; minor.m[0][1] = p0.x; minor.m[0][2] = p0.y; minor.m[0][3] = 1;
-		minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; minor.m[1][1] = p1.x; minor.m[1][2] = p1.y; minor.m[1][3] = 1;
-		minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; minor.m[2][1] = p2.x; minor.m[2][2] = p2.y; minor.m[2][3] = 1;
-		minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; minor.m[3][1] = p3.x; minor.m[3][2] = p3.y; minor.m[3][3] = 1;
-		T m14 = minor.determinant();
+		_minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; _minor.m[0][1] = p0.x; _minor.m[0][2] = p0.y; _minor.m[0][3] = 1;
+		_minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; _minor.m[1][1] = p1.x; _minor.m[1][2] = p1.y; _minor.m[1][3] = 1;
+		_minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; _minor.m[2][1] = p2.x; _minor.m[2][2] = p2.y; _minor.m[2][3] = 1;
+		_minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; _minor.m[3][1] = p3.x; _minor.m[3][2] = p3.y; _minor.m[3][3] = 1;
+		T m14 = _minor.determinant();
 
-		minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; minor.m[0][1] = p0.x; minor.m[0][2] = p0.y; minor.m[0][3] = p0.z;
-		minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; minor.m[1][1] = p1.x; minor.m[1][2] = p1.y; minor.m[1][3] = p1.z;
-		minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; minor.m[2][1] = p2.x; minor.m[2][2] = p2.y; minor.m[2][3] = p2.z;
-		minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; minor.m[3][1] = p3.x; minor.m[3][2] = p3.y; minor.m[3][3] = p3.z;
-		T m15 = minor.determinant();
+		_minor.m[0][0] = p0.x * p0.x + p0.y * p0.y + p0.z * p0.z; _minor.m[0][1] = p0.x; _minor.m[0][2] = p0.y; _minor.m[0][3] = p0.z;
+		_minor.m[1][0] = p1.x * p1.x + p1.y * p1.y + p1.z * p1.z; _minor.m[1][1] = p1.x; _minor.m[1][2] = p1.y; _minor.m[1][3] = p1.z;
+		_minor.m[2][0] = p2.x * p2.x + p2.y * p2.y + p2.z * p2.z; _minor.m[2][1] = p2.x; _minor.m[2][2] = p2.y; _minor.m[2][3] = p2.z;
+		_minor.m[3][0] = p3.x * p3.x + p3.y * p3.y + p3.z * p3.z; _minor.m[3][1] = p3.x; _minor.m[3][2] = p3.y; _minor.m[3][3] = p3.z;
+		T m15 = _minor.determinant();
 
 		
 		center.x =  static_cast<T>(0.5) * m12 / m11;

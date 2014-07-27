@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <CoreLib.h>
+#include <coreLib.h>
 #include <math/algebra/vector/vector3.h>
 #include <math/algebra/point/point3.h>
 #include <geometry/utils.h>

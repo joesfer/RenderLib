@@ -40,15 +40,15 @@ namespace Math {
 				 T m30, T m31, T m32, T m33 );
 		Matrix4( const T* m );
 
-		static Matrix4<T> Matrix4<T>::rotationFromAngles(float yaw, float pitch, float roll);
+		static Matrix4<T> rotationFromAngles(float yaw, float pitch, float roll);
 
 		// Operators ///
 
 		Matrix4<T> transposed() const;
 		Matrix4<T>& transpose();
 
-		Matrix4<T> Matrix4<T>::inverse() const;
-		Matrix4<T>& Matrix4<T>::invert();
+		Matrix4<T> inverse() const;
+		Matrix4<T>& invert();
 
 		void toAngles(float& yaw, float& pitch, float& roll) const;
 
@@ -56,7 +56,7 @@ namespace Math {
 		T determinant() const;
 		Vector3<T> transform(const Vector3<T>& v) const;
 		Point3<T> transform(const Point3<T>& p) const;
-		Matrix4<T> Matrix4<T>::operator * (const Matrix4<T>& M ) const;
+		Matrix4<T> operator * (const Matrix4<T>& M ) const;
 
 	public:
 		T m[4][4];
