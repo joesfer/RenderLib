@@ -90,7 +90,7 @@ inline T Normal2<T>::normalize() {
 }
 
 template< typename T >
-inline static Normal2<T> Normal2<T>::normalize(const Normal2<T>& n) {
+inline /*static*/ Normal2<T> Normal2<T>::normalize(const Normal2<T>& n) {
 	T length = sqrt(n.x*n.x + n.y*n.y);
 	assert(length != 0);
 	T invLength = static_cast<T>(1.0) / length;

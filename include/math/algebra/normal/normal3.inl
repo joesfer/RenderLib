@@ -101,7 +101,7 @@ inline T Normal3<T>::dot(const Normal3<T>& n, const Vector3<T>& v) {
 
 template< typename T >
 inline T Normal3<T>::dot(const Normal3<T>& n1, const Normal3<T>& n2) {
-	return x*v.x + y*v.y + z*v.z;
+	return n1.x*n2.x + n1.y*n2.y + n1.z*n2.z;
 }
 
 template< typename T >
