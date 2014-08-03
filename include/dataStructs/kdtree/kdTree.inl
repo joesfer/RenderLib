@@ -101,7 +101,9 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 	while( isect.t >= tMin ) {
 
 		if ( currNode->IsLeaf() == false ) {
+#ifdef __MSC_VER
 #pragma region INTERMEDIATE_NODE
+#endif
 			const int splitAxis = currNode->planeType;
 			float tSplitPlane;
 			if ( ray.direction[ splitAxis ] != 0 ) {
@@ -139,18 +141,24 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 
 				assert(stackElement < TRAVERSAL_MAXDEPTH);
 			}			
+#ifdef __MSC_VER
 #pragma endregion
+#endif
 		} else {
 
+#ifdef __MSC_VER
 #pragma region LEAF_NODE
+#endif
 			// Check for intersection against the primitives in this node
 
 			const int *indices       = mesh->getIndices();
 			const T* verts = mesh->getVertices();
-			Point3f start = ray.origin + ray.direction * tMin;
-			Point3f end   = ray.origin + ray.direction * tMax;
+			//Point3f start = ray.origin + ray.direction * tMin;
+			//Point3f end   = ray.origin + ray.direction * tMax;
 
+#ifdef __MSC_VER
 #pragma region INTERSECTION_TEST
+#endif
 			float t, v, w;
 
 			if ( trace.doubleSided == true ) {			
@@ -197,7 +205,9 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 					}			
 				}
 			}
+#ifdef __MSC_VER
 #pragma endregion
+#endif
 			
 			// Pop the following node from the traversal stack
 			if (stackElement > 0) {
@@ -208,7 +218,10 @@ bool KdTree::traceClosest( const TraceDesc& trace, const RenderLib::DataStructur
 			} else {
 				break; // done
 			}
+
+#ifdef __MSC_VER
 #pragma endregion
+#endif
 		}
 	}
 

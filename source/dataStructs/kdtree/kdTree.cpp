@@ -73,7 +73,6 @@ namespace DataStructures {
 			MARK_AS_LEAF( node->triangles.size() )
 		}
 
-		int bestSharedTris = 0;
 		int bestPlaneType = 0;
 		float bestSplitter = 0.f;
 
@@ -92,7 +91,6 @@ namespace DataStructures {
 		float cost = 0;
 		for ( int j = 0; j < 3; j++ ) {
 			int planeType = j;
-			int sharedTris = 0;
 	#if ADAPTIVE_HEURISTIC		
 			float splitter = depth > maxDepth / 4 || node->triangles.size() < (size_t)KdTree::heuristicSwitchThreshold ? 
 								// more expensive and more accurate when we have fewer triangles per node
@@ -107,7 +105,6 @@ namespace DataStructures {
 
 				bestSplitter = splitter;
 				bestPlaneType = planeType;
-				bestSharedTris = sharedTris;
 				bestSplitCost = cost;
 
 				bestLeftTriangles.resize( 0, false );
@@ -376,7 +373,7 @@ namespace DataStructures {
 	void KdTreeAllocator::allocChunk( ) {
 		currentChunk->nextChunk = new memChunk_t( chunkSize );
 		currentChunk = currentChunk->nextChunk;
-	};
+	}
 
 }
 }

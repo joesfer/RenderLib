@@ -60,7 +60,7 @@ namespace Math {
 		*/
 
 
-		static void init_genrand(unsigned long seed);
+		void init_genrand(unsigned long seed);
 		unsigned long genrand_int32(void);
 
 		/* generates a random number on [0,1)-real-interval */

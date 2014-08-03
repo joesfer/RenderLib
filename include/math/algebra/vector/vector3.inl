@@ -182,14 +182,14 @@ inline Vector3<T> Vector3<T>::clamp(const Vector3<T>& v, const Vector3<T>& m, co
 
 template< typename T >
 inline bool Vector3< T >::isZero( const T epsilon ) const {
-	return	abs( x ) <= epsilon && abs( y ) <= epsilon && abs( z ) <= epsilon;
+	return	fabs( x ) <= epsilon && fabs( y ) <= epsilon && fabs( z ) <= epsilon;
 }
 
 template< typename T >
 inline bool Vector3<T>::equals( const Vector3<T>& p, const T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-			abs( y - p.y ) <= epsilon &&
-			abs( z - p.z ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+			fabs( y - p.y ) <= epsilon &&
+			fabs( z - p.z ) <= epsilon;
 }
 
 // specializations for vector3d ////////////////////////////////////////////////////

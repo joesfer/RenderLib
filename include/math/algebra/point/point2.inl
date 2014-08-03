@@ -128,8 +128,8 @@ inline Point2<T> Point2<T>::clamp(const Point2<T>& v, const Point2<T>& m, const 
 
 template< typename T >
 inline bool Point2<T>::equals( const Point2<T>& p, T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-			abs( y - p.y ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+			fabs( y - p.y ) <= epsilon;
 }
 
 // specializations for Point2d ////////////////////////////////////////////////////

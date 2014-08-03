@@ -134,9 +134,9 @@ inline Point3<T> Point3<T>::clamp(const Point3<T>& v, const Point3<T>& m, const 
 
 template< typename T >
 inline bool Point3<T>::equals( const Point3<T>& p, T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-			abs( y - p.y ) <= epsilon &&
-			abs( z - p.z ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+			fabs( y - p.y ) <= epsilon &&
+			fabs( z - p.z ) <= epsilon;
 }
 
 // specializations for Point3d ////////////////////////////////////////////////////

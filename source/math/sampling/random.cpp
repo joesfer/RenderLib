@@ -45,7 +45,7 @@ namespace Matsumoto {
 	static unsigned long mt[N]; /* the array for the state vector  */
 	static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 	// Random Number Functions
-	static void init_genrand(unsigned long seed) {
+	void init_genrand(unsigned long seed) {
 		mt[0]= seed & 0xffffffffUL;
 		for (mti=1; mti<N; mti++) {
 			mt[mti] =
@@ -57,7 +57,7 @@ namespace Matsumoto {
 			mt[mti] &= 0xffffffffUL;
 			/* for >32 bit machines */
 		}
-	};
+	}
 	unsigned long genrand_int32(void)
 	{
 		unsigned long y;
@@ -93,19 +93,19 @@ namespace Matsumoto {
 		y ^= (y >> 18);
 
 		return y;
-	};
+	}
 	/* generates a random number on [0,1]-real-interval */
 	float genrand_real1(void)
 	{
 		return genrand_int32()*((float)1.0/(float)4294967295.0);
 		/* divided by 2^32-1 */
-	};
+	}
 	/* generates a random number on [0,1)-real-interval */
 	float genrand_real2(void)
 	{
 		return genrand_int32()*((float)1.0/(float)4294967296.0);
 		/* divided by 2^32 */
-	};	
+	}	
 
 } // namespace Matsumoto
 } // namespace Math

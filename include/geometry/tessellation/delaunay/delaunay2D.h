@@ -32,7 +32,6 @@
 #include <math/algebra/matrix/matrix4.h>
 #include <math/constants.h>
 #include <geometry/intersection/intersection.h>
-#define DEBUG_STEPS 0
 
 namespace RenderLib {
 namespace Geometry {

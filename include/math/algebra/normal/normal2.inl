@@ -99,8 +99,8 @@ inline /*static*/ Normal2<T> Normal2<T>::normalize(const Normal2<T>& n) {
 
 template< typename T >
 inline bool Normal2<T>::equals( const Normal2<T>& p, T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-		abs( y - p.y ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+		fabs( y - p.y ) <= epsilon;
 }
 
 // specialization for Normalf //////////////////////////////////////////////////////////////////////////

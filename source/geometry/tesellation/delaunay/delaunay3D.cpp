@@ -2006,7 +2006,7 @@ bool Delaunay3D::tetrahedralize( const CoreLib::List< Point >& srcPoints,
 										tetrahedron_t& t = tetrahedra[ i ];
 										for( size_t j = 0; j < 4; j++ ) {
 											if( t.v[ j ] >= srcPoints.size() ) {
-												t.destroy( tetrahedra );
+												Tetrahedron::destroy( t, tetrahedra );
 												break;
 											}
 										}			

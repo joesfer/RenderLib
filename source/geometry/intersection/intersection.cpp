@@ -30,7 +30,7 @@ namespace Geometry {
 
 	bool segmentIntersect(  const RenderLib::Math::Vector2f A, const RenderLib::Math::Vector2f B, 
 							const RenderLib::Math::Vector2f C, const RenderLib::Math::Vector2f D, 
-							const float epsilon ) {
+							const float /*epsilon*/ ) {
 
 #if 0 // using parametric equations
 			const float denom = ( B.y - A.y ) * ( D.x - C.x ) - ( B.x - A.x ) * ( D.y - C.y );
@@ -44,7 +44,6 @@ namespace Geometry {
 			return dist2AB > epsilon 
 				&& dist2CD > epsilon;
 #else	// using triangle areas (Real Time Collision Detection book)
-			epsilon; // avoid 'unreferenced parameter' warning
 			float a1 = signed2DTriangleArea( A, B, D ); // compute winding of ABD [ + or - ]
 			float a2 = signed2DTriangleArea( A, B, C ); // to intersect, must have sign opposite of a1
 

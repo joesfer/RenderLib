@@ -106,9 +106,9 @@ inline T Normal3<T>::dot(const Normal3<T>& n1, const Normal3<T>& n2) {
 
 template< typename T >
 inline bool Normal3<T>::equals( const Normal3<T>& p, T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-		abs( y - p.y ) <= epsilon &&
-		abs( z - p.z ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+		fabs( y - p.y ) <= epsilon &&
+		fabs( z - p.z ) <= epsilon;
 }
 
 template< typename T >

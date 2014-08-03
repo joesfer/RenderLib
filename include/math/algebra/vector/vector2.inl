@@ -166,13 +166,13 @@ inline Vector2<T> Vector2<T>::clamp(const Vector2<T>& v, const Vector2<T>& m, co
 
 template< typename T >
 inline bool Vector2< T >::isZero( const T epsilon ) const {
-	return	abs( x ) <= epsilon && abs( y ) <= epsilon;
+	return	fabs( x ) <= epsilon && fabs( y ) <= epsilon;
 }
 
 template< typename T >
 inline bool Vector2<T>::equals( const Vector2<T>& p, const T epsilon ) const {
-	return	abs( x - p.x ) <= epsilon &&
-			abs( y - p.y ) <= epsilon;
+	return	fabs( x - p.x ) <= epsilon &&
+			fabs( y - p.y ) <= epsilon;
 }
 
 // specializations for Vector2d ////////////////////////////////////////////////////

@@ -25,6 +25,7 @@
 #include <geometry/bounds/bounds2D.h>
 #include <geometry/utils.h>
 #include <climits>
+#define DEBUG_STEPS 0
 
 namespace RenderLib {
 namespace Geometry {
@@ -245,13 +246,14 @@ namespace internal {
 					   const float diagonal, 
 					   const LIST( int ) &edges, 
 					   const LIST( RenderLib::Math::Vector2f )& vertices, 
+#if _DEBUG && 0
 					   int triIdx ) {
-
+#else
+					   int /*triIdx*/ ) {
+#endif
 			using namespace RenderLib::Geometry;
 			using namespace RenderLib::Math;
 			
-			(triIdx); // avoid 'unreferenced parameter' warning. This is only used for debugging
-
 #define RETRIALS 4
 			bool outside[ RETRIALS ];
 			for( int retrials = 0; retrials < RETRIALS; retrials++ ) {
