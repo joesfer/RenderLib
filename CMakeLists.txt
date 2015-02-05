@@ -21,6 +21,8 @@ if(WIN32)
 		add_definitions(-D NOMINMAX) # prevent windef.h min/max macros from interfering with stl's
 		#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
     endif(MSVC)
+else()
+add_definitions(-fPIC)
 endif (WIN32)
 
 #specify app sources
@@ -69,7 +71,11 @@ endif(WIN32)
 add_library(${RENDER_LIB} STATIC ${RENDERLIB_SOURCES})
 target_link_libraries( ${RENDER_LIB} ${CORE_LIB})
 
+if(WIN32)
 set_target_properties( ${RENDER_LIB} PROPERTIES PREFIX "" )
+else()
+set_target_properties( ${RENDER_LIB} PROPERTIES PREFIX "lib" )
+endif()
 set_target_properties( ${RENDER_LIB} PROPERTIES OUTPUT_NAME ${RENDER_LIB} )
 set_target_properties( ${RENDER_LIB} PROPERTIES LINKER_LANGUAGE CXX )
 set_target_properties( ${RENDER_LIB} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${RENDERLIB_OUTPUT_FOLDER} )

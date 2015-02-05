@@ -81,8 +81,8 @@ void BVH::split( size_t nodeIndex,
         int longestAxis = bounds.longestAxis();
 #ifdef _DEBUG
         float longestAxisLength = bounds.extents()[longestAxis];
-#endif
         assert(longestAxisLength > 0);
+#endif
         // classify primitives with regards of the spatial mean
 
         float cMin = FLT_MAX;
