@@ -89,7 +89,7 @@ namespace Geometry {
 							p3.x, p3.y, p3.z, static_cast<T>(1) );
 		T m11 = _minor.determinant();
 
-        if ( fabs( (float)m11 ) < 1e-5 ) {
+		if ( abs( m11 ) < 1e-5 ) { 
 			return false;
 		}
 
@@ -124,10 +124,10 @@ namespace Geometry {
 		
 		radius = sqrt( center.x * center.x + center.y * center.y + center.z * center.z - m15/m11 );
 
-		assert( fabs( center.distanceTo( p0 ) - radius ) < static_cast<T>(0.1) );
-		assert( fabs( center.distanceTo( p1 ) - radius ) < static_cast<T>(0.1) );
-		assert( fabs( center.distanceTo( p2 ) - radius ) < static_cast<T>(0.1) );
-		assert( fabs( center.distanceTo( p3 ) - radius ) < static_cast<T>(0.1) );
+		assert( abs( center.distanceTo( p0 ) - radius ) < static_cast<T>(0.1) );
+		assert( abs( center.distanceTo( p1 ) - radius ) < static_cast<T>(0.1) );
+		assert( abs( center.distanceTo( p2 ) - radius ) < static_cast<T>(0.1) );
+		assert( abs( center.distanceTo( p3 ) - radius ) < static_cast<T>(0.1) );
 
 		return true;
 	}
@@ -143,7 +143,7 @@ namespace Geometry {
 		const float a = Matrix3< T >( p0.x, p0.y, 1, 
                                               p1.x, p1.y, 1,
                                               p2.x, p2.y, 1 ).determinant();
-		if ( fabs( a ) < 1e-5 ) {
+		if ( abs( a ) < 1e-5 ) {
 			return false;
 		}
 		const float d = -Matrix3< T >( p0.x * p0.x + p0.y * p0.y, p0.y, 1, 

@@ -179,7 +179,7 @@ inline bool Vector2<T>::equals( const Vector2<T>& p, const T epsilon ) const {
 
 template<>
 inline bool Vector2<double>::isValid() const {
-	return !_isnan( x ) && !_isnan( y )/* && _finite( x ) && _finite( y ) */;
+	return !std::isnan( x ) && !std::isnan( y )/* && _finite( x ) && _finite( y ) */;
 }
 
 template<>
@@ -191,7 +191,7 @@ inline Vector2<double> Vector2<double>::clamp(const Vector2<double>& v, double M
 
 template<>
 inline bool Vector2<float>::isValid() const {
-	return !_isnan( x ) && !_isnan( y )/* && _finitef( x ) && _finitef( y )*/;
+	return !std::isnan( x ) && !std::isnan( y )/* && _finitef( x ) && _finitef( y )*/;
 }
 
 template<>

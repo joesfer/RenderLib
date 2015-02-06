@@ -182,21 +182,21 @@ inline Vector3<T> Vector3<T>::clamp(const Vector3<T>& v, const Vector3<T>& m, co
 
 template< typename T >
 inline bool Vector3< T >::isZero( const T epsilon ) const {
-	return	fabs( x ) <= epsilon && fabs( y ) <= epsilon && fabs( z ) <= epsilon;
+	return	abs( x ) <= epsilon && abs( y ) <= epsilon && abs( z ) <= epsilon;
 }
 
 template< typename T >
 inline bool Vector3<T>::equals( const Vector3<T>& p, const T epsilon ) const {
-	return	fabs( x - p.x ) <= epsilon &&
-			fabs( y - p.y ) <= epsilon &&
-			fabs( z - p.z ) <= epsilon;
+	return	abs( x - p.x ) <= epsilon &&
+			abs( y - p.y ) <= epsilon &&
+			abs( z - p.z ) <= epsilon;
 }
 
 // specializations for vector3d ////////////////////////////////////////////////////
 
 template<>
 inline bool Vector3<double>::isValid() const {
-	return !_isnan( x ) && !_isnan( y ) && !_isnan( z )/* && _finite( x ) && _finite( y ) && _finite( z )*/;
+	return !std::isnan( x ) && !std::isnan( y ) && !std::isnan( z )/* && _finite( x ) && _finite( y ) && _finite( z )*/;
 }
 
 template<>
@@ -208,7 +208,7 @@ inline Vector3<double> Vector3<double>::clamp(const Vector3<double>& v, double M
 
 template<>
 inline bool Vector3<float>::isValid() const {
-	return !_isnan( x ) && !_isnan( y ) && !_isnan( z )/* && _finitef( x ) && _finitef( y ) && _finitef( z )*/;
+	return !std::isnan( x ) && !std::isnan( y ) && !std::isnan( z )/* && _finitef( x ) && _finitef( y ) && _finitef( z )*/;
 }
 
 template<>
